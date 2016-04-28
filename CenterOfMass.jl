@@ -1,5 +1,8 @@
 #module CenterOfMass
 
+# all wrenches computed around the origin
+point_to_wrench(p) = [1;cross(p,z)[1:2]]
+
 function critical_force(wrench_applied, wrench_offset, W_boundary)
   fa = Variable(1)
   Fr = Variable(size(W_boundary, 2))
@@ -21,8 +24,6 @@ function critical_force(wrench_applied, wrench_offset, W_boundary)
 
   problem.optval, evaluate(Fr)
 end
-
-point_to_wrench(p) = [1;cross(p,z)[1:2]]
 
 flatten(v) = hcat(v...)
 
@@ -65,11 +66,31 @@ function plot_solution(boundary_ps, com_p, applied_p, reaction_ps)
   plot(com_p[1,:]', com_p[2,:]', "og")
   plot(applied_p[1,:]', applied_p[2,:]', "oy")
   plot(flatten(reaction_ps)[1,:]', flatten(reaction_ps)[2,:]',"or")
-  legend(["boundary", "com", "applied", "reaction"])
+  legend(["boundary", "com", "applied", "reaction"], loc = 4)
 end
 
-function initialize_prior(boundary_ps, resolution, interior_q)
+function initialize_prior(boundary_ps, resolution, support_volume, interior_q)
+  boundary_vec = flatten(boundary_ps)
 
+  min_p = minimum(boundary_vec, 2)[1:2]
+  max_p = maximum(boundary_vec, 2)[1:2]
+  grid_size = convert(Array{Int64}, (max_p - min_p)/resolution)
+
+  prior = OccupancyGrid(resolution, -min_p, grid_size)
+
+  l_occupied = to_log_odds(1 / support_volume)
+
+  for ii = 1:size(prior.cells, 1)
+    for jj = 1:size(prior.cells, 1)
+      ind = OccupancyGridIndex((ii, jj))
+      p = to_world(prior, ind)
+      if interior_q(p)
+        set!(prior, ind, l_occupied)
+      end
+    end
+  end
+
+  prior
 end
 
 #end
