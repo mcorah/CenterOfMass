@@ -90,7 +90,7 @@ function initialize_prior(boundary_ps, resolution, interior_q)
 
   num_inside = 0
   for ii = 1:size(prior.cells, 1)
-    for jj = 1:size(prior.cells, 1)
+    for jj = 1:size(prior.cells, 2)
       ind = OccupancyGridIndex((ii, jj))
       p = to_world(prior, ind)
       if interior_q(p)
@@ -101,7 +101,7 @@ function initialize_prior(boundary_ps, resolution, interior_q)
   l_occupied = to_log_odds(1 / (resolution^2 * num_inside))
 
   for ii = 1:size(prior.cells, 1)
-    for jj = 1:size(prior.cells, 1)
+    for jj = 1:size(prior.cells, 2)
       ind = OccupancyGridIndex((ii, jj))
       p = to_world(prior, ind)
       if interior_q(p)
@@ -144,7 +144,7 @@ end
 function get_critical_values(boundary_ps, applied_p, grid, interior_q)
   values = zeros(size(grid.cells))
   for ii = 1:size(grid.cells, 1)
-    for jj = 1:size(grid.cells, 1)
+    for jj = 1:size(grid.cells, 2)
       ind = OccupancyGridIndex((ii, jj))
       p = [to_world(grid, ind);0]
       if interior_q(p)
