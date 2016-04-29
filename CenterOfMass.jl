@@ -69,12 +69,14 @@ function solve_and_plot(boundary_ps, com_p, applied_p)
 end
 
 function plot_solution(boundary_ps, com_p, applied_p, reaction_ps)
+  marker_size = 200
+
   boundary_vec = hcat(boundary_ps..., boundary_ps[1])
-  plot(boundary_vec[1,:]', boundary_vec[2,:]',"-b")
-  plot(com_p[1,:]', com_p[2,:]', "og")
-  plot(applied_p[1,:]', applied_p[2,:]', "oy")
-  plot(flatten(reaction_ps)[1,:]', flatten(reaction_ps)[2,:]',"or")
-  legend(["boundary", "com", "applied", "reaction"], loc = 4)
+  plot(boundary_vec[1,:]', boundary_vec[2,:]',"-k")
+  scatter(com_p[1,:]', com_p[2,:]', color="g", s=marker_size)
+  scatter(applied_p[1,:]', applied_p[2,:]', color="b", s=marker_size)
+  scatter(flatten(reaction_ps)[1,:]', flatten(reaction_ps)[2,:]', color="c", s=marker_size)
+  legend(["\$\\mathcal{C}\$", "\$q_g\$", "\$q_a\$", "\$q_r\$"], loc = 4)
   title("Applied, gravity, and reaction forces")
 end
 
@@ -163,12 +165,12 @@ end
 function plot_attachment_csqmis(boundary_ps, attachment_ps, csqmis)
   boundary_vec = hcat(boundary_ps..., boundary_ps[1])
   attachment_vec = hcat(attachment_ps...)
-  plot(boundary_vec[1,:]', boundary_vec[2,:]',"-b")
+  plot(boundary_vec[1,:]', boundary_vec[2,:]',"-k")
   #plot(attachment_vec[1,:]', attachment_vec[2,:]', "og", s = csqmis)
 
   csqmi_diffs = csqmis - mean(csqmis)
-  csqmi_diffs *= 80 / maximum(csqmi_diffs)
-  scatter(attachment_vec[1,:]', attachment_vec[2,:]', s = csqmi_diffs)
+  csqmi_diffs *= 200 / maximum(csqmi_diffs)
+  scatter(attachment_vec[1,:]', attachment_vec[2,:]', s = csqmi_diffs, color="b")
   #legend(["boundary", "attachments"], loc = 4)
   title("csqmi values")
 end
