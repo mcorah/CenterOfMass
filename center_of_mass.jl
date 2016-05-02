@@ -44,36 +44,21 @@ update_prior!(prior, interior_q, circle_ps, applied_p, f_hat, sigma)
 plot_grid(prior, :hot)
 title("probability distribution of center-of-mass")
 
-# selection of second point
-csqmis = [(println("computed csqmi");compute_mutual_information(circle_ps, x, prior, sigma, interior_q)) for x = circle_ps]
-figure()
-plot_attachment_csqmis(circle_ps, circle_ps, csqmis)
+for ii = 1:2
+  # selection of second point
+  csqmis = [(println("computed csqmi");compute_mutual_information(circle_ps, x, prior, sigma, interior_q)) for x = circle_ps]
+  figure()
+  plot_attachment_csqmis(circle_ps, circle_ps, csqmis)
 
-# application at second point
-applied_p = circle_ps[indmax(csqmis)]
+  # application at second point
+  applied_p = circle_ps[indmax(csqmis)]
 
-figure()
-applied_f, boundary_fs = solve_and_plot(circle_ps, com_p, applied_p)
-f_hat = applied_f + sigma * randn()
-update_prior!(prior, interior_q, circle_ps, applied_p, f_hat, sigma)
+  figure()
+  applied_f, boundary_fs = solve_and_plot(circle_ps, com_p, applied_p)
+  f_hat = applied_f + sigma * randn()
+  update_prior!(prior, interior_q, circle_ps, applied_p, f_hat, sigma)
 
-#fig, ax = plt[:subplots](1)
-plot_grid(prior, :hot)
-title("probability distribution of center-of-mass")
-
-# selection of third point
-csqmis = [(println("computed csqmi");compute_mutual_information(circle_ps, x, prior, sigma, interior_q)) for x = circle_ps]
-figure()
-plot_attachment_csqmis(circle_ps, circle_ps, csqmis)
-
-# application at third point
-applied_p = circle_ps[indmax(csqmis)]
-
-figure()
-applied_f, boundary_fs = solve_and_plot(circle_ps, com_p, applied_p)
-f_hat = applied_f + sigma * randn()
-update_prior!(prior, interior_q, circle_ps, applied_p, f_hat, sigma)
-
-#fig, ax = plt[:subplots](1)
-plot_grid(prior, :hot)
-title("probability distribution of center-of-mass")
+  #fig, ax = plt[:subplots](1)
+  plot_grid(prior, :hot)
+  title("probability distribution of center-of-mass")
+end

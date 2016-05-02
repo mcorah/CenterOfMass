@@ -29,17 +29,15 @@ function integral2(p_com, cell_volume, sigma)
   out = 0
 
   for ii = 1:length(p_com)
-    for jj = 1:length(p_com)
-      out += p_com[ii]^2 * normal(0, 2*sigma^2)
-    end
+    out += p_com[ii]^2 * normal(0, 2*sigma^2)
   end
-  out /= cell_volume^2
+  out /= cell_volume
 
   out
 end
 
 function integral3(critical_fs, p_com, cell_volume, sigma)
-  val1 = sum(p_com.^2) / cell_volume^2
+  val1 = sum(p_com.^2) / cell_volume
 
   val2 = 0
   for ii = 1:length(p_com)
