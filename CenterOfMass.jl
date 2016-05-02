@@ -59,25 +59,32 @@ function get_reaction_points(boundary_ps, boundary_fs)
   force_points
 end
 
-function solve_and_plot(boundary_ps, com_p, applied_p)
+function solve_and_plot(boundary_ps, com_p, applied_p, attachment_ps)
   applied_f, boundary_fs = critical_force_from_points(boundary_ps, com_p, applied_p)
 
   reaction_ps = get_reaction_points(boundary_ps, boundary_fs)
-  plot_solution(boundary_ps, com_p, applied_p, reaction_ps)
+  plot_solution(boundary_ps, com_p, applied_p, reaction_ps, attachment_ps)
 
   applied_f, boundary_fs
 end
 
-function plot_solution(boundary_ps, com_p, applied_p, reaction_ps)
+function plot_solution(boundary_ps, com_p, applied_p, reaction_ps, attachment_ps)
   marker_size = 200
 
   boundary_vec = hcat(boundary_ps..., boundary_ps[1])
+  attachment_vec = hcat(attachment_ps...)
+
   plot(boundary_vec[1,:]', boundary_vec[2,:]',"-k")
-  scatter(com_p[1,:]', com_p[2,:]', color="g", s=marker_size)
   scatter(applied_p[1,:]', applied_p[2,:]', color="b", s=marker_size)
-  scatter(flatten(reaction_ps)[1,:]', flatten(reaction_ps)[2,:]', color="c", s=marker_size)
-  legend(["\$\\mathcal{C}\$", "\$q_g\$", "\$q_a\$", "\$q_r\$"], loc = 4)
-  title("Applied, gravity, and reaction forces")
+  scatter(flatten(reaction_ps)[1,:]', flatten(reaction_ps)[2,:]', color="r", s=marker_size)
+  scatter(com_p[1,:]', com_p[2,:]', marker="*", color="k", s=marker_size)
+  scatter(attachment_vec[1,:]', attachment_vec[2,:]', marker="x", color="k", s = marker_size)
+  lgnd = legend(["\$\\mathcal{C}\$", "\$q_a\$", "\$q_r\$" ,"\$q_g\$",
+                "\$\\mathcal{A}\$"], loc = 4, ncol = 5, scatterpoints = 1,
+                handletextpad=0.1,
+                columnspacing=0.1)
+  map(x->lgnd[:legendHandles][x][:_sizes] = [100], 2:5)
+  #title("Applied, gravity, and reaction forces")
 end
 
 function initialize_prior(boundary_ps, resolution, interior_q)
@@ -133,14 +140,19 @@ function update_prior!(prior, interior_q, boundary_ps, applied_p, f_hat, sigma)
 
   prior.cells[:] = map(to_log_odds, p_com_given_f)
 
-  figure()
-  critical_fs_normalized = critical_fs / maximum(critical_fs)
-  pcolormesh(critical_fs', cmap = PyPlot.cm[:hot])
-  title("critical forces")
-
   #figure()
-  #p_f_given_com_normalized = p_f_given_com / maximum(p_f_given_com)
-  #pcolormesh(p_f_given_com_normalized', cmap = PyPlot.cm[:hot])
+  #critical_fs_normalized = critical_fs / maximum(critical_fs)
+
+  #ps = get_grid_points(prior)
+
+  #z_min = minimum(critical_fs_normalized)
+  #z_max = maximum(critical_fs_normalized)
+  #b_min = minimum(ps, 2)
+  #b_max = maximum(ps, 2)
+  #imshow(critical_fs_normalized', cmap="hot", vmin=z_min, vmax=z_max,
+             #extent=[b_min[1], b_max[1], b_min[2], b_max[2]],
+             #interpolation="nearest", origin="lower")
+  #title("critical forces")
 end
 
 function get_critical_values(boundary_ps, applied_p, grid, interior_q)
@@ -168,11 +180,15 @@ function plot_attachment_csqmis(boundary_ps, attachment_ps, csqmis)
   plot(boundary_vec[1,:]', boundary_vec[2,:]',"-k")
   #plot(attachment_vec[1,:]', attachment_vec[2,:]', "og", s = csqmis)
 
-  csqmi_diffs = csqmis - mean(csqmis)
-  csqmi_diffs *= 200 / maximum(csqmi_diffs)
-  scatter(attachment_vec[1,:]', attachment_vec[2,:]', s = csqmi_diffs, color="b")
+  csqmi_scaled = csqmis * 800 / maximum(csqmis)
+  scatter(attachment_vec[1,:]', attachment_vec[2,:]', s = csqmi_scaled, color="b")
+  scatter(attachment_vec[1,:]', attachment_vec[2,:]', marker="x", color="k", s=200)
   #legend(["boundary", "attachments"], loc = 4)
-  title("csqmi values")
+  #title("csqmi values")
+  lgnd = legend(["\$\\mathcal{C}\$", "\$I_{CS}\$", "\$\\mathcal{A}\$"], loc = 4,
+                ncol = 3, scatterpoints = 1, handletextpad=0.1, columnspacing=0.1)
+  lgnd[:legendHandles][2][:_sizes] = [100]
+  lgnd[:legendHandles][3][:_sizes] = [100]
 end
 
 include("csqmi.jl")
