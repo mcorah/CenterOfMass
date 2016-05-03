@@ -75,15 +75,17 @@ function plot_solution(boundary_ps, com_p, applied_p, reaction_ps, attachment_ps
   attachment_vec = hcat(attachment_ps...)
 
   plot(boundary_vec[1,:]', boundary_vec[2,:]',"-k")
-  scatter(applied_p[1,:]', applied_p[2,:]', color="b", s=marker_size)
-  scatter(flatten(reaction_ps)[1,:]', flatten(reaction_ps)[2,:]', color="r", s=marker_size)
-  scatter(com_p[1,:]', com_p[2,:]', marker="*", color="k", s=marker_size)
-  scatter(attachment_vec[1,:]', attachment_vec[2,:]', marker="x", color="k", s = marker_size)
-  lgnd = legend(["\$\\mathcal{C}\$", "\$q_a\$", "\$q_r\$" ,"\$q_g\$",
-                "\$\\mathcal{A}\$"], loc = 4, ncol = 5, scatterpoints = 1,
+  scatter(applied_p[1,:]', applied_p[2,:]', color="k", s=800, alpha=0.8)
+  scatter(flatten(reaction_ps)[1,:]', flatten(reaction_ps)[2,:]', marker = (6,2,0),
+          color="r", s=marker_size)
+  scatter(com_p[1,:]', com_p[2,:]', marker="*", color="k", s=300, alpha=0.8)
+  #scatter(attachment_vec[1,:]', attachment_vec[2,:]', marker="x", color="k", s = 350)
+  lgnd = legend(["\$\\mathcal{C}\$", "\$I_{CS}\$", "\$\\mathbf{q}_a\$",
+  "\$\\mathbf{q}_r\$" ,"\$\\mathbf{q}_g\$"],
+                loc = 4, ncol = 5, scatterpoints = 1,
                 handletextpad=0.1,
-                columnspacing=0.1)
-  map(x->lgnd[:legendHandles][x][:_sizes] = [100], 2:5)
+                columnspacing=0.1, frameon = false)
+  map(x->lgnd[:legendHandles][x][:_sizes] = [100], [2,3,4,5])
   #title("Applied, gravity, and reaction forces")
 end
 
@@ -175,20 +177,11 @@ function get_critical_values(boundary_ps, applied_p, grid, interior_q)
 end
 
 function plot_attachment_csqmis(boundary_ps, attachment_ps, csqmis)
-  boundary_vec = hcat(boundary_ps..., boundary_ps[1])
   attachment_vec = hcat(attachment_ps...)
-  plot(boundary_vec[1,:]', boundary_vec[2,:]',"-k")
-  #plot(attachment_vec[1,:]', attachment_vec[2,:]', "og", s = csqmis)
 
   csqmi_scaled = csqmis * 800 / maximum(csqmis)
-  scatter(attachment_vec[1,:]', attachment_vec[2,:]', s = csqmi_scaled, color="b")
-  scatter(attachment_vec[1,:]', attachment_vec[2,:]', marker="x", color="k", s=200)
-  #legend(["boundary", "attachments"], loc = 4)
-  #title("csqmi values")
-  lgnd = legend(["\$\\mathcal{C}\$", "\$I_{CS}\$", "\$\\mathcal{A}\$"], loc = 4,
-                ncol = 3, scatterpoints = 1, handletextpad=0.1, columnspacing=0.1)
-  lgnd[:legendHandles][2][:_sizes] = [100]
-  lgnd[:legendHandles][3][:_sizes] = [100]
+  scatter(attachment_vec[1,:]', attachment_vec[2,:]', s = csqmi_scaled,
+  color="b", alpha = 0.5, edgecolor="k", linewidth=2)
 end
 
 include("csqmi.jl")
