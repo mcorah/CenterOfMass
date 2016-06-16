@@ -1,5 +1,9 @@
 function compute_mutual_information(boundary_ps, applied_p, prior, sigma, interior_q)
   critical_fs = get_critical_values(boundary_ps, applied_p, prior, interior_q)
+  compute_mutual_information(critical_fs, prior, sigma)
+end
+
+function compute_mutual_information(critical_fs, prior, sigma)
   p_com = map(to_probability, prior.cells)
   cell_volume = prior.resolution^2
 

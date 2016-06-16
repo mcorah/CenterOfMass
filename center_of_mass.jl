@@ -27,7 +27,7 @@ attachment_ps = map(theta->r_attach*[cos(theta);sin(theta);0], thetas)
 resolution = 0.05
 #resolution = 0.1
 
-interior_q(x) = norm(x) <= 1
+interior_q(x) = norm(x) <= 1 - resolution * 3/2
 
 prior = initialize_prior(circle_ps, resolution, interior_q)
 
@@ -43,16 +43,25 @@ com_p = r_attach * rand_in_circle()
 pygui(false)
 for ii = 1:3
   # selection of second point
-  csqmis = [(println("computed csqmi");compute_mutual_information(circle_ps, x, prior, sigma, interior_q)) for x = attachment_ps]
+  critical_forces_by_point = map(attachment_ps) do point
+    get_critical_values(attachment_ps, point, prior, interior_q)
+  end
+
+  csqmis = map(critical_forces_by_point) do critical_forces
+    println("computing csqmi")
+    compute_mutual_information(critical_forces, prior, sigma)
+  end
+
   fig = figure(figsize=(6,6), dpi=600)
   plot_attachment_csqmis(circle_ps, attachment_ps, csqmis)
 
   # application at second point
   applied_p = attachment_ps[indmax(csqmis)]
+  critical_forces = critical_forces_by_point[indmax(csqmis)]
 
   applied_f, boundary_fs = solve_and_plot(circle_ps, com_p, applied_p, attachment_ps)
   f_hat = applied_f + sigma * randn()
-  update_prior!(prior, interior_q, circle_ps, applied_p, f_hat, sigma)
+  update_prior!(prior, critical_forces, f_hat, sigma)
 
   #fig, ax = plt[:subplots](1)
   plot_grid(prior, "BuPu")

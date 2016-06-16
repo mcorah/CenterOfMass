@@ -126,9 +126,12 @@ end
 
 # currently implemented for a prior independent of the measurement
 function update_prior!(prior, interior_q, boundary_ps, applied_p, f_hat, sigma)
-  cell_volume = prior.resolution^2
-
   critical_fs = get_critical_values(boundary_ps, applied_p, prior, interior_q)
+  update_prior!(prior, critical_fs, f_hat, sigma)
+end
+
+function update_prior!(prior, critical_fs, f_hat, sigma)
+  cell_volume = prior.resolution^2
 
   p_prior = map(to_probability, prior.cells)
 
