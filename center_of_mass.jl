@@ -33,7 +33,7 @@ attachment_ps = map(theta->r_attach*[cos(theta);sin(theta);0], thetas)
 #resolution = 0.2
 resolution = 0.1
 
-interior_q(x) = norm(x) <= 1 - resolution * 3/2
+@everywhere interior_q(x) = norm(x) <= 1 - resolution * 3/2
 
 prior = initialize_prior(circle_ps, resolution, interior_q, masses, mass_resolution)
 
@@ -46,13 +46,13 @@ prior = initialize_prior(circle_ps, resolution, interior_q, masses, mass_resolut
 com_p = r_attach * rand_in_circle()
 #com_p = [-0.6;-0.13;0.0]
 
-pygui(true)
-for ii = 1:1
-  # selection of second point
-  critical_forces_by_point = map(attachment_ps) do point
-    get_critical_values(attachment_ps, point, prior, interior_q, masses)
-  end
+critical_forces_by_point = map(attachment_ps) do point
+  get_critical_values(attachment_ps, point, prior, interior_q, masses)
+end
 
+pygui(false)
+for ii = 1:8
+  # selection of second point
   csqmis = map(critical_forces_by_point) do critical_forces
     println("computing csqmi")
     compute_mutual_information(critical_forces, prior, sigma, resolution^2*mass_resolution)
@@ -77,22 +77,25 @@ for ii = 1:1
 
   cloud = to_cloud(prior, masses, interior_q)
 
-  figure()
+  fig, ax = plt[:subplots](1)
 
   plot_attachment_csqmis(circle_ps, attachment_ps, csqmis)
   plot_solution(applied_p)
 
-  scaled_ps = (10*cloud[4,:]'/maximum(cloud[4,:]))
-  scatter3D(cloud[1,:]', cloud[2,:]', cloud[3,:]', "z", scaled_ps.^2, alpha = 0.5)
+  scaled_ps = (15*cloud[4,:]'/maximum(cloud[4,:]))
+  scatter3D(cloud[1,:]', cloud[2,:]', cloud[3,:]', "z", scaled_ps.^2, "purple", alpha = 0.5)
 
   # plot point
   scatter3D([com_p[1]], [com_p[2]], [mass], "z", 200, "red", marker="*", alpha=1)
   #scatter3D(cloud[1,:]', cloud[2,:]', cloud[3,:]', cloud[4,:]')
 
   #title("probability distribution of center-of-mass")
-  xlabel("x")
-  ylabel("y")
-  zlabel("mass")
-  #savefig("fig/belief_$(ii).png", pad_inches=0.01, bbox_inches="tight")
+  xlabel("X")
+  ylabel("Y")
+  zlabel("M")
+  fig[:axes][1][:get_yaxis]()[:set_visible](false)
+  fig[:axes][1][:get_xaxis]()[:set_visible](false)
+  #axis("off")
+  savefig("fig/belief_3d$(ii).png", pad_inches=0.01, bbox_inches="tight")
 end
-#pygui(true)
+pygui(true)
