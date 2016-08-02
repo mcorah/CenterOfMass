@@ -33,7 +33,7 @@ attachment_ps = map(theta->r_attach*[cos(theta);sin(theta);0], thetas)
 #resolution = 0.2
 resolution = 0.1
 
-@everywhere interior_q(x) = norm(x) <= 1 - resolution * 3/2
+interior_q(x) = norm(x) <= 1 - resolution * 3/2
 
 prior = initialize_prior(circle_ps, resolution, interior_q, masses, mass_resolution)
 
@@ -47,7 +47,7 @@ com_p = r_attach * rand_in_circle()
 #com_p = [-0.6;-0.13;0.0]
 
 critical_forces_by_point = map(attachment_ps) do point
-  get_critical_values(attachment_ps, point, prior, interior_q, masses)
+  get_critical_values(circle_ps, point, prior, interior_q, masses)
 end
 
 pygui(false)
