@@ -175,8 +175,7 @@ end
 function plot_attachment_csqmis(boundary_ps, attachment_ps, csqmis)
   attachment_vec = hcat(attachment_ps...)
 
-  csqmi_scaled = csqmis - minimum(csqmis)
-  csqmi_scaled = csqmi_scaled * 800 / maximum(csqmi_scaled)
+  csqmi_scaled = 800 * csqmis / maximum(csqmis)
   scatter3D(attachment_vec[1,:]', attachment_vec[2,:]',
     zeros(size(attachment_vec, 2)), s = csqmi_scaled,
     color="b", alpha = 0.5, edgecolor="k", linewidth=2)
