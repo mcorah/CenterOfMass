@@ -3,9 +3,10 @@
 using PyPlot
 using Mapping
 using Convex
+using SCS
 
 # all wrenches computed around the origin
-point_to_wrench(p) = [1;cross(p,z)[1:2]]
+point_to_wrench(p) = [1;cross(p,[0;0;1])[1:2]]
 
 normal(x, var) = 1/sqrt(2*pi*var)*exp(-0.5*x^2/var)
 
@@ -20,16 +21,56 @@ function critical_force(wrench_applied, wrench_offset, W_boundary)
 
   problem = maximize(fa, [stability; feasibility])
 
-  TT=STDOUT
-  redirect_stdout()
-  solve!(problem)
-  redirect_stdout(TT)
+  solver = SCSSolver(verbose = 0)
+
+  #TT=STDOUT
+  #redirect_stdout()
+  solve!(problem, solver)
+  #redirect_stdout(TT)
 
   #if problem.status != :Optimal
     #error("Solution not optimal: $(problem.status)")
   #end
 
   problem.optval, evaluate(Fr)
+end
+
+function solve_minimal(a, w1, w2, b)
+  A = [a w1 w2]
+
+  if abs(det(A)) <= 1e-3
+    return -1, [-1;-1]
+  end
+
+  x = inv(A) * (-b)
+
+  if !all(x .>= -1e-3)
+    return -1, [-1;-1]
+  end
+
+  return x[1], x[2:3]
+end
+
+# assume points form the convex hull and are arranged clockwise or
+# counter-clockwise
+function critical_force_iterative(wrench_applied, wrench_offset, W_boundary)
+  max_val = -1
+
+  n = size(W_boundary, 2)
+
+  max_forces = zeros(n)
+
+  for ii = 1:n
+    i2 = mod(ii, n) + 1
+    val, forces = solve_minimal(wrench_applied, W_boundary[:,ii], W_boundary[:,i2], wrench_offset)
+
+    if val > max_val
+      max_val = val
+      max_forces[[ii,i2]] = forces
+    end
+  end
+
+  max_val, max_forces
 end
 
 flatten(v::Array) = hcat(v...)
@@ -41,14 +82,20 @@ function rand_in_circle()
   r * [cos(theta);sin(theta);0]
 end
 
-function critical_force_from_points(boundary_ps, com_p, applied_p, mass)
+function critical_force_from_points(boundary_ps, com_p, applied_p, mass, solver
+  = critical_force)
   g = -9.8
 
   boundary_ws = hcat(map(point_to_wrench, boundary_ps)...)
   gravity_w = mass*g*point_to_wrench(com_p)
   applied_w = point_to_wrench(applied_p)
 
-  fa, f_boundary = critical_force(applied_w, gravity_w, boundary_ws)
+  fa, f_boundary = solver(applied_w, gravity_w, boundary_ws)
+
+  stability = applied_w * fa +
+              boundary_ws * f_boundary +
+              gravity_w
+
   fa, f_boundary
 end
 
