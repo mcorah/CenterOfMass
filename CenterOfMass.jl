@@ -6,9 +6,9 @@ using Convex
 using SCS
 
 # all wrenches computed around the origin
-point_to_wrench(p) = [1;cross(p,[0;0;1])[1:2]]
+point_to_wrench(p::Array{Float64,1}) = [1.0;-p[1]; p[2]]
 
-normal(x, var) = 1/sqrt(2*pi*var)*exp(-0.5*x^2/var)
+normal(x, var) = exp(-0.5*x*x/var)/sqrt(2*pi*var)
 
 function critical_force(wrench_applied, wrench_offset, W_boundary)
   fa = Variable(1)
@@ -23,14 +23,7 @@ function critical_force(wrench_applied, wrench_offset, W_boundary)
 
   solver = SCSSolver(verbose = 0)
 
-  #TT=STDOUT
-  #redirect_stdout()
   solve!(problem, solver)
-  #redirect_stdout(TT)
-
-  #if problem.status != :Optimal
-    #error("Solution not optimal: $(problem.status)")
-  #end
 
   problem.optval, evaluate(Fr)
 end
@@ -38,14 +31,16 @@ end
 function solve_minimal(a, w1, w2, b)
   A = [a w1 w2]
 
-  if abs(det(A)) <= 1e-3
-    return -1, [-1;-1]
-  end
+  #if abs(det(A)) <= 1e-3
+    #return -1, [-1;-1]
+  #end
 
-  x = inv(A) * (-b)
+  x = A \ (-b)
 
-  if !all(x .>= -1e-3)
-    return -1, [-1;-1]
+  for ii = 1:3
+    if x[ii] < -1e-3
+      return -1, [-1;-1]
+    end
   end
 
   return x[1], x[2:3]
@@ -82,11 +77,21 @@ function rand_in_circle()
   r * [cos(theta);sin(theta);0]
 end
 
+function to_wrench_matrix(points)
+  n = length(points)
+  ws = zeros(3, n)
+  for ii = 1:n
+    ws[:,ii] = point_to_wrench(points[ii])
+  end
+
+  ws
+end
+
 function critical_force_from_points(boundary_ps, com_p, applied_p, mass, solver
-  = critical_force)
+  = critical_force_iterative)
   g = -9.8
 
-  boundary_ws = hcat(map(point_to_wrench, boundary_ps)...)
+  boundary_ws = to_wrench_matrix(boundary_ps)
   gravity_w = mass*g*point_to_wrench(com_p)
   applied_w = point_to_wrench(applied_p)
 
