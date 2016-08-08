@@ -1,7 +1,6 @@
 using PyPlot
 using Convex
 using ProfileView
-using Mapping
 include("CenterOfMass.jl")
 
 function test_csqmi()
@@ -9,7 +8,7 @@ function test_csqmi()
   forces = rand(2000)
   prior = rand(2000)
   prior = prior / sum(prior)
-  @elapsed @profile compute_mutual_information(forces, prior, sigma, 1.0)
+  @elapsed @profile compute_mutual_information(forces, prior, sigma)
 end
 
 Profile.clear()

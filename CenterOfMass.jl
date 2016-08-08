@@ -1,9 +1,9 @@
 #module CenterOfMass
 
 using PyPlot
-using Mapping
 using Convex
 using SCS
+include("Histogram.jl")
 
 # all wrenches computed around the origin
 point_to_wrench(p::Array{Float64,1}) = [1.0;-p[2]; p[1]]
@@ -124,39 +124,38 @@ function plot_solution(applied_p)
   scatter3D(applied_p[1,:]', applied_p[2,:]', [0], color="k", s=800, alpha=0.8)
 end
 
-function initialize_prior(boundary_ps, resolution, interior_q, masses, mass_resolution)
+function initialize_prior(boundary_ps, resolution, interior_q, masses)
   boundary_vec = flatten(boundary_ps)
 
   min_p = minimum(boundary_vec, 2)[1:2]
   max_p = maximum(boundary_vec, 2)[1:2]
-  grid_size = convert(Array{Int64}, floor((max_p - min_p)/resolution))
+  position_ranges = map(x->x[1]:resolution:x[2], zip(min_p, max_p))
+  ranges = (position_ranges..., masses)
 
-  prior = map(m->OccupancyGrid(resolution, -min_p, grid_size), masses)
-
-  cell_volume = resolution^2 * mass_resolution
+  prior = Histogram(ranges)
 
   num_inside = 0
-  for ii = 1:length(masses)
-    for jj = 1:size(prior[ii].cells, 1)
-      for kk = 1:size(prior[ii].cells, 2)
-        ind = OccupancyGridIndex((jj, kk))
-        p = to_world(prior[ii], ind)
-        if interior_q(p)
+  for kk = 1:length(1:length(get_range(prior, 3)))
+    for jj = 1:length(1:length(get_range(prior, 2)))
+      for ii = 1:length(1:length(get_range(prior, 1)))
+        p = from_indices(prior, [ii,jj,kk])
+        if interior_q(p[1:2])
           num_inside += 1
         end
       end
     end
   end
-  p_occupied = (1 / (cell_volume * num_inside))
+  p_interior = (1 / (num_inside))
 
-  for ii = 1:length(masses)
-    for jj = 1:size(prior[ii].cells, 1)
-      for kk = 1:size(prior[ii].cells, 2)
-        ind = OccupancyGridIndex((jj, kk))
-        p = to_world(prior[ii], ind)
-        if interior_q(p)
-          set!(prior[ii], ind, p_occupied)
+  for kk = 1:length(1:length(get_range(prior, 3)))
+    for jj = 1:length(1:length(get_range(prior, 2)))
+      for ii = 1:length(1:length(get_range(prior, 1)))
+        p = from_indices(prior, [ii,jj,kk])
+        value = 0
+        if interior_q(p[1:2])
+          value = p_interior
         end
+        get_data(prior)[ii,jj,kk] = value
       end
     end
   end
@@ -164,54 +163,42 @@ function initialize_prior(boundary_ps, resolution, interior_q, masses, mass_reso
   prior
 end
 
-function update_prior!(prior, interior_q, boundary_ps, applied_p, f_hat, sigma, masses)
-  critical_fs = get_critical_values(boundary_ps, applied_p, prior, interior_q,
-  masses)
-  update_prior!(prior, critical_fs, f_hat, sigma, masses[2] - masses[1])
+function update_prior!(prior, interior_q, boundary_ps, applied_p, f_hat, sigma)
+  critical_fs = get_critical_values(boundary_ps, applied_p, prior, interior_q)
+  update_prior!(prior, critical_fs, f_hat, sigma)
 end
 
 shift_dims(field) = reshape(field[1,:,:], (size(field, 2), size(field, 3)))
 
-function update_prior!(prior, critical_fs, f_hat, sigma, mass_resolution)
-  cell_volume = prior[1].resolution^2 * mass_resolution
-
-  p_prior = map(x->x.cells, prior)
-  @show typeof(p_prior)
+function update_prior!(prior, critical_fs, f_hat, sigma)
+  p_prior = get_data(prior)
 
   p_f_given_com = map(y->normal(y, sigma^2), f_hat - critical_fs)
-  #@show typeof(p_f_given_com)
   #plot_field(shift_dims(p_f_given_com), "p_f_given_com")
 
-  p_f_and_com = Array[]
-  for ii = 1:length(p_prior)
-    push!(p_f_and_com, shift_dims(p_f_given_com[ii,:,:]).*p_prior[ii])
-  end
-  #p_f_and_com = map(x->x[1] .* x[2], zip(p_f_given_com, p_prior))
-  #@show typeof(p_f_and_com)
+  p_f_and_com = p_f_given_com .* p_prior
+
   #plot_field(p_f_and_com[1], "p_f_and_com")
 
-  p_f = sum(flatten(p_f_and_com)) * cell_volume
+  p_f = sum(p_f_and_com)
 
-  p_com_given_f = map(x->map(x->x / p_f, x), p_f_and_com)
-  @show typeof(p_com_given_f), size(p_com_given_f[1]), size(prior[1].cells)
+  p_com_given_f = p_f_and_com / p_f
+
   #plot_field(p_com_given_f[1], "p_com_given_f")
 
-  for ii = 1:length(prior)
-    prior[ii].cells[:] = p_com_given_f[ii]
-  end
+  get_data(prior)[:] = p_com_given_f[:]
 
   prior
 end
 
-function get_critical_values(boundary_ps, applied_p, grids, interior_q, masses)
-  values = zeros(length(masses), size(grids[1].cells)...)
-  for ii = 1:length(masses)
-    for jj = 1:size(grids[ii].cells, 1)
-      for kk = 1:size(grids[ii].cells, 2)
-        ind = OccupancyGridIndex((jj, kk))
-        p = [to_world(grids[ii], ind);0]
-        if interior_q(p)
-          applied_f, boundary_fs = critical_force_from_points(boundary_ps, p, applied_p, masses[ii])
+function get_critical_values(boundary_ps, applied_p, prior, interior_q)
+  values = zeros(size(prior))
+  for kk = 1:length(get_range(prior, 3))
+    for jj = 1:length(get_range(prior, 2))
+      for ii = 1:length(get_range(prior, 1))
+        p = from_indices(prior, [ii, jj, kk])
+        if interior_q(p[1:2])
+          applied_f, boundary_fs = critical_force_from_points(boundary_ps, p[1:2], applied_p, p[3])
           values[ii,jj,kk] = applied_f
           if isnan(applied_f)
             values[ii,jj,kk] = 0
@@ -236,16 +223,14 @@ end
 function to_cloud(prior, masses, interior_q)
   out = Any[]
   ind = 1
-  for ii = 1:length(masses)
-    for jj = 1:size(prior[ii].cells, 1)
-      for kk = 1:size(prior[ii].cells, 2)
-        occ_ind = OccupancyGridIndex((jj, kk))
-        point = to_world(prior[ii], occ_ind)
-        if(interior_q(point))
-          mass = masses[ii]
-          probability = prior[ii].cells[jj,kk]
-
-          push!(out, [point; mass; probability])
+  for kk = 1:length(get_range(prior, 3))
+    for jj = 1:length(get_range(prior, 2))
+      for ii = 1:length(get_range(prior, 1))
+        p = from_indices(prior, [ii, jj, kk])
+        if(interior_q(p[1:2]))
+          mass = p[3]
+          probability = get_data(prior)[ii, jj, kk]
+          push!(out, [p; probability])
         end
       end
     end

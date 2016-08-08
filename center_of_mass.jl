@@ -1,6 +1,5 @@
 using PyPlot
 using Convex
-using Mapping
 #using CenterOfMass
 include("CenterOfMass.jl")
 plt[:close]("all")
@@ -35,7 +34,7 @@ resolution = 0.1
 
 interior_q(x) = norm(x) <= 1 - resolution * 3/2
 
-prior = initialize_prior(circle_ps, resolution, interior_q, masses, mass_resolution)
+prior = initialize_prior(circle_ps, resolution, interior_q, masses)
 
 #fig, ax = plt[:subplots](1)
 #plot_grid(prior, :hot)
@@ -47,15 +46,15 @@ com_p = r_attach * rand_in_circle()
 #com_p = [-0.6;-0.13;0.0]
 
 critical_forces_by_point = map(attachment_ps) do point
-  get_critical_values(circle_ps, point, prior, interior_q, masses)
+  get_critical_values(circle_ps, point, prior, interior_q)
 end
 
 pygui(false)
-for ii = 1:8
+for ii = 1:16
   # selection of second point
   csqmis = map(critical_forces_by_point) do critical_forces
     println("computing csqmi")
-    compute_mutual_information(critical_forces, prior, sigma, resolution^2*mass_resolution)
+    compute_mutual_information(critical_forces, prior, sigma)
   end
 
   #fig = figure(figsize=(6,6), dpi=600)
@@ -69,11 +68,10 @@ for ii = 1:8
   #plot_field(reshape(critical_forces[1,:,:], (size(critical_forces, 2),
   #size(critical_forces, 3))))
 
-
   applied_f, boundary_fs = critical_force_from_points(circle_ps, com_p, applied_p, mass)
 
   f_hat = applied_f + sigma * randn()
-  update_prior!(prior, critical_forces, f_hat, sigma, mass_resolution)
+  update_prior!(prior, critical_forces, f_hat, sigma)
 
   cloud = to_cloud(prior, masses, interior_q)
 
