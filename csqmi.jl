@@ -12,9 +12,9 @@ function compute_mutual_information{T <: Map}(critical_fs, prior::Array{T}, sigm
 
   normals = normal_matrix(field, 2*nu)
 
-  i1 = integral1(field, belief, cell_volume, normals)
-  i2 = integral2(belief, cell_volume, normals)
-  i3 = integral3(field, belief, cell_volume, normals)
+  i1 = integral_cross(field, belief, cell_volume, normals)
+  i2 = integral_joint(belief, cell_volume, normals)
+  i3 = integral_marginals(field, belief, cell_volume, normals)
 
   out = -2*log(e, i1) + log(e, i2) + log(e, i3)
 
@@ -30,9 +30,9 @@ function compute_mutual_information(critical_fs, prior, sigma, cell_volume)
 
   normals = normal_matrix(field, 2*nu)
 
-  i1 = integral1(field, belief, cell_volume, normals)
-  i2 = integral2(belief, cell_volume, normals)
-  i3 = integral3(field, belief, cell_volume, normals)
+  i1 = integral_cross(field, belief, cell_volume, normals)
+  i2 = integral_joint(belief, cell_volume, normals)
+  i3 = integral_marginals(field, belief, cell_volume, normals)
 
   out::Float64 = -2*log(e, i1) + log(e, i2) + log(e, i3)
 
@@ -56,7 +56,7 @@ function normal_matrix(field, nu)
   normals
 end
 
-function integral1(field, belief, cell_volume::Float64, normals)
+function integral_cross(field, belief, cell_volume::Float64, normals)
   out::Float64 = 0.0
 
   @inbounds for ii = 1:length(belief)
@@ -69,7 +69,7 @@ function integral1(field, belief, cell_volume::Float64, normals)
   out
 end
 
-function integral2(belief, cell_volume, normals)
+function integral_joint(belief, cell_volume, normals)
   out::Float64 = 0.0
 
   @fastmath @inbounds @simd for ii = 1:length(belief)
@@ -80,7 +80,7 @@ function integral2(belief, cell_volume, normals)
   out
 end
 
-function integral3(field, belief, cell_volume, normals)
+function integral_marginals(field, belief, cell_volume, normals)
   val1::Float64 = sum(belief.^2) * cell_volume
 
   val2::Float64 = 0.0
