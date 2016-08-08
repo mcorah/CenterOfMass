@@ -45,7 +45,12 @@ function normal_matrix(field, nu)
   @inbounds for ii = 1:n
     @fastmath @simd for jj = ii+1:n
       normals[jj,ii] = normal(field[ii] - field[jj], nu)
+      normals[ii,jj] = normals[jj,ii]
     end
+  end
+
+  @inbounds @fastmath @simd for ii = 1:n
+    normals[ii,ii] = normal(0, nu)
   end
 
   normals
