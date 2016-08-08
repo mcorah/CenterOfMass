@@ -6,7 +6,7 @@ using Convex
 using SCS
 
 # all wrenches computed around the origin
-point_to_wrench(p::Array{Float64,1}) = [1.0;-p[1]; p[2]]
+point_to_wrench(p::Array{Float64,1}) = [1.0;-p[2]; p[1]]
 
 normal(x, var) = exp(-0.5*x*x/var)/sqrt(2*pi*var)
 
