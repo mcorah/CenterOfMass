@@ -42,15 +42,19 @@ end
 function normal_matrix(field, nu)
   n = length(field)
   normals = zeros(n, n)
+
+  nhalf_over_nu = - 0.5 / nu
+  over_sqrt2pinu = 1/sqrt(2*pi*nu)
+
   @inbounds for ii = 1:n
     @fastmath @simd for jj = ii+1:n
-      normals[jj,ii] = normal(field[ii] - field[jj], nu)
+      normals[jj,ii] = normal(field[ii] - field[jj], nhalf_over_nu, over_sqrt2pinu)
       normals[ii,jj] = normals[jj,ii]
     end
   end
 
   @inbounds @fastmath @simd for ii = 1:n
-    normals[ii,ii] = normal(0, nu)
+    normals[ii,ii] = normal(0, nhalf_over_nu, over_sqrt2pinu)
   end
 
   normals
@@ -61,7 +65,7 @@ function integral_cross(belief, normals)
 
   @inbounds for ii = 1:length(belief)
     @fastmath @simd for jj = 1:length(belief)
-      out += belief[ii]^2 * belief[jj] * normals[ii,jj]
+      out += belief[ii]^2 * belief[jj] * normals[jj,ii]
     end
   end
   out /= length(belief)^2
@@ -86,7 +90,7 @@ function integral_marginals(belief, normals)
   val2::Float64 = 0.0
   @inbounds for ii = 1:length(belief)
     @fastmath @simd for jj = 1:length(belief)
-      val2 += belief[ii] * belief[jj] * normals[ii,jj]
+      val2 += belief[ii] * belief[jj] * normals[jj,ii]
     end
   end
   val2 /= length(belief)^2

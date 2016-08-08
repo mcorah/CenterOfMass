@@ -8,7 +8,15 @@ include("Histogram.jl")
 # all wrenches computed around the origin
 point_to_wrench(p::Array{Float64,1}) = [1.0;-p[2]; p[1]]
 
-normal(x, var) = exp(-0.5*x*x/var)/sqrt(2*pi*var)
+# normal(x, var) = exp(-0.5*x*x/var)/sqrt(2*pi*var)
+one_over_sqrt_2pi = 1 / sqrt(2*pi)
+function normal(x, var)
+  ov = 1/var
+  sqrt2pivar = sqrt(ov) * one_over_sqrt_2pi
+  normal(x, -0.5*ov, sqrt2pivar)
+end
+
+normal(x, nhalfov, ov2sqrt2pi) = exp(x*x*nhalfov) * ov2sqrt2pi
 
 function critical_force(wrench_applied, wrench_offset, W_boundary)
   fa = Variable(1)
