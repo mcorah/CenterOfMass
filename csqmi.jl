@@ -3,33 +3,19 @@ function compute_mutual_information(boundary_ps, applied_p, prior, sigma, interi
   compute_mutual_information(critical_fs, prior, sigma)
 end
 
-function compute_mutual_information(critical_fs, prior::Histogram, sigma)
-  nu = sigma^2
-
-  belief = get_data(prior)[:]
-
-  field = critical_fs[:]
-
-  normals = normal_matrix(field, 2*nu)
-
-  i1 = integral_cross(belief, normals)
-  i2 = integral_joint(belief, normals)
-  i3 = integral_marginals(belief, normals)
-
-  out = -2*log(e, i1) + log(e, i2) + log(e, i3)
-
-  out
-end
-
 function compute_mutual_information(critical_fs, prior, sigma)
   nu = sigma^2
 
-  belief = flatten(prior)[:]
+  belief = prior[:]
+  field = critical_fs[:]
 
-  field = flatten(critical_fs)[:]
+  normals = normal_matrix(field, nu)
 
-  normals = normal_matrix(field, 2*nu)
+  compute_mutual_information(belief, normals)
+end
 
+function compute_mutual_information(belief::Array{Float64,1},
+                                    normals::Array{Float64,2})
   i1 = integral_cross(belief, normals)
   i2 = integral_joint(belief, normals)
   i3 = integral_marginals(belief, normals)
@@ -40,11 +26,13 @@ function compute_mutual_information(critical_fs, prior, sigma)
 end
 
 function normal_matrix(field, nu)
+  two_nu = 2 * nu
+
   n = length(field)
   normals = zeros(n, n)
 
-  nhalf_over_nu = - 0.5 / nu
-  over_sqrt2pinu = 1/sqrt(2*pi*nu)
+  nhalf_over_nu = - 0.5 / two_nu
+  over_sqrt2pinu = 1/sqrt(2*pi*two_nu)
 
   @inbounds for ii = 1:n
     @fastmath @simd for jj = ii+1:n

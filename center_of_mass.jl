@@ -2,59 +2,30 @@ using PyPlot
 using Convex
 #using CenterOfMass
 include("CenterOfMass.jl")
+include("setup_parameters.jl")
+
 plt[:close]("all")
 
-min_mass = 0.6
-max_mass = 1.4
 mass = min_mass + rand() * (max_mass - min_mass)
-g = -9.8
-z = [0;0;1]
-sigma = 1
-#sigma = 0.1
-
-mass_resolution = 0.2
-masses = collect(min_mass:mass_resolution:max_mass)
-
-np = 20
-#np = 8
-thetas = 2*pi * (1/np:1/np:1)
-circle_ps = map(theta->[cos(theta);sin(theta);0], thetas)
-
-# move to separate attachment points
-na = 10
-thetas = 2*pi * (1/na:1/na:1)
-r_attach = 0.8
-#r_attach = 0.6
-attachment_ps = map(theta->r_attach*[cos(theta);sin(theta);0], thetas)
-
-# set up the occupancy prior
-#resolution = 0.05
-#resolution = 0.2
-resolution = 0.1
-
-interior_q(x) = norm(x) <= 1 - resolution * 3/2
+com_p = r_attach * rand_in_circle()
 
 prior = initialize_prior(circle_ps, resolution, interior_q, masses)
-
-#fig, ax = plt[:subplots](1)
-#plot_grid(prior, :hot)
-#ax[:set_ylim]([-1,1])
-#ax[:set_xlim]([-1,1])
-
-# really I lose uniformity here
-com_p = r_attach * rand_in_circle()
-#com_p = [-0.6;-0.13;0.0]
 
 critical_forces_by_point = map(attachment_ps) do point
   get_critical_values(circle_ps, point, prior, interior_q)
 end
 
+normals_matrices = map(critical_forces_by_point) do forces
+  normal_matrix(forces, sigma^2)
+end
+
 pygui(false)
 for ii = 1:16
   # selection of second point
-  csqmis = map(critical_forces_by_point) do critical_forces
+  n_attach = length(critical_forces_by_point)
+  csqmis = map(1:n_attach) do ii
     println("computing csqmi")
-    compute_mutual_information(critical_forces, prior, sigma)
+    compute_mutual_information(get_data(prior)[:], normals_matrices[ii])
   end
 
   #fig = figure(figsize=(6,6), dpi=600)
