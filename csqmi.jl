@@ -25,8 +25,8 @@ function compute_mutual_information(belief::Array{Float64,1},
   out
 end
 
-function normal_matrix(field, nu)
-  two_nu = 2 * nu
+function normal_matrix(field::Array{Float64,1}, nu::Float64)
+  two_nu::Float64 = 2 * nu
 
   n = length(field)
   normals = zeros(n, n)
@@ -42,7 +42,7 @@ function normal_matrix(field, nu)
   end
 
   @inbounds @fastmath @simd for ii = 1:n
-    normals[ii,ii] = normal(0, nhalf_over_nu, over_sqrt2pinu)
+    normals[ii,ii] = normal(0.0, nhalf_over_nu, over_sqrt2pinu)
   end
 
   normals
