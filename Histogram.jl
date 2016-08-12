@@ -38,8 +38,16 @@ generate_prior(x::Histogram) = generate_prior(x.range)
 weighted_average(x::Histogram, dim) = dot(sum_all_dims_but(x.data, dim), collect(x.range[dim]))
 weighted_average(h::Histogram) = map(x->weighted_average(h, x), 1:length(h.range))
 
-from_indices(h::Histogram, inds) = convert(Array{Float64},
-  map(x->h.range[x[1]][x[2]], zip(1:ndim(h), inds)))
+#from_indices(h::Histogram, inds) = convert(Array{Float64},
+  #map(x->h.range[x[1]][x[2]], zip(1:ndim(h), inds)))
+function from_indices(h::Histogram, inds::Array{Int64})
+  n = length(h.range)
+  out = zeros(n)
+  for ii = 1:n
+    out[ii] = h.range[ii][inds[ii]]
+  end
+  out
+end
 
 ###########
 # Test code
