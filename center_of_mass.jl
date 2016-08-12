@@ -16,7 +16,7 @@ critical_forces_by_point = map(attachment_ps) do point
 end
 
 normals_matrices = map(critical_forces_by_point) do forces
-  normal_matrix(forces, sigma^2)
+  normal_matrix(forces[:], sigma^2)
 end
 
 pygui(false)
