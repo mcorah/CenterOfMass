@@ -49,8 +49,6 @@ nf = length(selection_functions)
 estimates = cell(n_trial, nf, n_measurement)
 errors = zeros(n_trial, nf, n_measurement)
 
-
-@load "greedy_v_random/data" errors thetas estimates
 if false
 for ii = 1:n_trial
   theta = thetas[:,ii]
@@ -84,6 +82,8 @@ for ii = 1:n_trial
     end
   end
 end
+else
+@load "greedy_v_random/data" errors thetas estimates
 end
 
 mean_error = mean(errors, 1)
