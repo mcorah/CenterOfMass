@@ -139,6 +139,30 @@ function plot_solution(applied_p)
   scatter3D(applied_p[1,:]', applied_p[2,:]', [0], color="k", s=800, alpha=0.8)
 end
 
+function plot_attachment_points(attachment_ps)
+  for p = attachment_ps
+    scatter3D(p[1,:]', p[2,:]', [0], s=400, facecolors="none",edgecolors = "k",
+    alpha = 0.8)
+  end
+end
+
+function plot_new_point(point)
+  scatter3D(point[1,:]', point[2,:]', [0], s=400, facecolors="none",edgecolors =
+  "b", alpha = 0.8)
+end
+
+function plot_occupied_points(occupied_points)
+  for p = occupied_points
+    scatter3D(p[1,:]', p[2,:]', [0], color="k", s=400, alpha = 0.8)
+  end
+end
+
+function plot_measurement_points(measurement_points)
+  for p = measurement_points
+    scatter3D(p[1,:]', p[2,:]', [0], color="r", s=400, alpha = 0.8)
+  end
+end
+
 function initialize_prior(boundary_ps, resolution, interior_q, masses)
   boundary_vec = flatten(boundary_ps)
 
