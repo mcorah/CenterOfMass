@@ -47,33 +47,39 @@ function solve_minimal(a, w1, w2, b)
 
   for ii = 1:3
     if x[ii] < -1e-3
-      return -1, [-1;-1]
+      return -1.0
     end
   end
 
-  return x[1], x[2:3]
+  return x[1]
 end
 
 # assume points form the convex hull and are arranged clockwise or
 # counter-clockwise
-function critical_force_iterative(wrench_applied, wrench_offset, W_boundary)
-  max_val = -1
+function critical_force_iterative(wrench_applied, wrench_offset, W_boundary,
+  actuator_limit::Float64 = 1e6)
+
+  max_val::Float64 = -1
 
   n = size(W_boundary, 2)
 
-  max_forces = zeros(n)
-
+  # TODO: implement binary search
   for ii = 1:n
     i2 = mod(ii, n) + 1
-    val, forces = solve_minimal(wrench_applied, W_boundary[:,ii], W_boundary[:,i2], wrench_offset)
+    val = solve_minimal(wrench_applied, W_boundary[:,ii], W_boundary[:,i2], wrench_offset)
 
     if val > max_val
-      max_val = val
-      max_forces[[ii,i2]] = forces
+      if val > actuator_limit
+        max_val = actuator_limit
+      else
+        max_val = val
+      end
+
+      break
     end
   end
 
-  max_val, max_forces
+  max_val
 end
 
 flatten(v::Array) = hcat(v...)
@@ -95,15 +101,16 @@ function to_wrench_matrix(points)
   ws
 end
 
-function critical_force_from_points(boundary_ps, com_p, applied_p, mass, solver
-  = critical_force_iterative)
+function critical_force_from_points(boundary_ps, com_p, applied_p, mass,
+    actuator_limit = 1e6, solver = critical_force_iterative)
+
   g = -9.8
 
   boundary_ws = to_wrench_matrix(boundary_ps)
   gravity_w = mass*g*point_to_wrench(com_p)
   applied_w = point_to_wrench(applied_p)
 
-  fa, f_boundary = solver(applied_w, gravity_w, boundary_ws)
+  fa, f_boundary = solver(applied_w, gravity_w, boundary_ws, actuator_limit)
 
   stability = applied_w * fa +
               boundary_ws * f_boundary +
@@ -147,7 +154,7 @@ function initialize_prior(boundary_ps, resolution, interior_q, masses)
     for jj = 1:length(1:length(get_range(prior, 2)))
       for ii = 1:length(1:length(get_range(prior, 1)))
         p = from_indices(prior, [ii,jj,kk])
-        if interior_q(p[1:2])
+        if interior_q(p[1:2])::Bool
           num_inside += 1
         end
       end
@@ -160,7 +167,7 @@ function initialize_prior(boundary_ps, resolution, interior_q, masses)
       for ii = 1:length(1:length(get_range(prior, 1)))
         p = from_indices(prior, [ii,jj,kk])
         value = 0
-        if interior_q(p[1:2])
+        if interior_q(p[1:2])::Bool
           value = p_interior
         end
         get_data(prior)[ii,jj,kk] = value
@@ -171,8 +178,8 @@ function initialize_prior(boundary_ps, resolution, interior_q, masses)
   prior
 end
 
-function update_prior!(prior, interior_q, boundary_ps, applied_p, f_hat, sigma)
-  critical_fs = get_critical_values(boundary_ps, applied_p, prior, interior_q)
+function update_prior!(prior, interior_q, boundary_ws, applied_w, f_hat, sigma, actuator_limit = 1e6)
+  critical_fs = get_critical_values(boundary_ws, applied_w, prior, interior_q, actuator_limit)
   update_prior!(prior, critical_fs, f_hat, sigma)
 end
 
@@ -199,17 +206,20 @@ function update_prior!(prior, critical_fs, f_hat, sigma)
   prior
 end
 
-function get_critical_values(boundary_ps, applied_p, prior, interior_q)
+function get_critical_values(boundary_ws, applied_w, prior, interior_q, actuator_limit = 1e6)
   values = zeros(size(prior))
+
   for kk = 1:length(get_range(prior, 3))
     for jj = 1:length(get_range(prior, 2))
       for ii = 1:length(get_range(prior, 1))
         p = from_indices(prior, [ii, jj, kk])
-        if interior_q(p[1:2])
-          applied_f, boundary_fs = critical_force_from_points(boundary_ps, p[1:2], applied_p, p[3])
+        if interior_q(p[1:2])::Bool
+          mass = p[3]
+          gravity_w = mass*g*point_to_wrench(p)
+          applied_f = critical_force_iterative(applied_w, gravity_w, boundary_ws, actuator_limit)
           values[ii,jj,kk] = applied_f
           if isnan(applied_f)
-            values[ii,jj,kk] = 0
+            values[ii,jj,kk] = 0.0
           end
         end
       end
@@ -235,7 +245,7 @@ function to_cloud(prior, masses, interior_q)
     for jj = 1:length(get_range(prior, 2))
       for ii = 1:length(get_range(prior, 1))
         p = from_indices(prior, [ii, jj, kk])
-        if(interior_q(p[1:2]))
+        if(interior_q(p[1:2]))::Bool
           mass = p[3]
           probability = get_data(prior)[ii, jj, kk]
           push!(out, [p; probability])
