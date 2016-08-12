@@ -17,12 +17,12 @@ plt[:close]("all")
 
 prior = initialize_prior(circle_ps, resolution, interior_q, masses)
 
-@time critical_forces_by_point = map(attachment_ps) do point
-  get_critical_values(circle_ps, point, prior, interior_q)
+@time critical_forces_by_point = map(attachment_ws) do wrench
+  get_critical_values(circle_ws, wrench, prior, interior_q)
 end
 
 @time normals_matrices = map(critical_forces_by_point) do forces
-  normal_matrix(forces, sigma^2)
+  normal_matrix(forces[:], sigma^2)
 end
 
 rand_com() = r_attach * rand_in_circle()[1:2] # hack
@@ -67,7 +67,7 @@ for ii = 1:n_trial
       index = selection_function(belief)
       applied_p = attachment_ps[index]
 
-      applied_f, boundary_fs = critical_force_from_points(circle_ps, com_p, applied_p, mass)
+      applied_f = critical_force_from_points(circle_ps, com_p, applied_p, mass)
 
       f_hat = applied_f + sigma * randn()
 
