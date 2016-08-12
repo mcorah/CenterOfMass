@@ -11,8 +11,8 @@ com_p = r_attach * rand_in_circle()
 
 prior = initialize_prior(circle_ps, resolution, interior_q, masses)
 
-critical_forces_by_point = map(attachment_ps) do point
-  get_critical_values(circle_ps, point, prior, interior_q)
+critical_forces_by_point = map(attachment_ws) do wrench
+  get_critical_values(circle_ws, wrench, prior, interior_q)
 end
 
 normals_matrices = map(critical_forces_by_point) do forces
@@ -39,7 +39,7 @@ for ii = 1:16
   #plot_field(reshape(critical_forces[1,:,:], (size(critical_forces, 2),
   #size(critical_forces, 3))))
 
-  applied_f, boundary_fs = critical_force_from_points(circle_ps, com_p, applied_p, mass)
+  applied_f = critical_force_from_points(circle_ps, com_p, applied_p, mass)
 
   f_hat = applied_f + sigma * randn()
   update_prior!(prior, critical_forces, f_hat, sigma)
