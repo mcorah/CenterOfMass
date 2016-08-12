@@ -110,13 +110,13 @@ function critical_force_from_points(boundary_ps, com_p, applied_p, mass,
   gravity_w = mass*g*point_to_wrench(com_p)
   applied_w = point_to_wrench(applied_p)
 
-  fa, f_boundary = solver(applied_w, gravity_w, boundary_ws, actuator_limit)
+  fa = solver(applied_w, gravity_w, boundary_ws, actuator_limit)
 
-  stability = applied_w * fa +
-              boundary_ws * f_boundary +
-              gravity_w
+  #stability = applied_w * fa +
+              #boundary_ws * f_boundary +
+              #gravity_w
 
-  fa, f_boundary
+  fa
 end
 
 function get_reaction_points(boundary_ps, boundary_fs)
