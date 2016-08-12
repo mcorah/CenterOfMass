@@ -49,7 +49,6 @@ nf = length(selection_functions)
 estimates = cell(n_trial, nf, n_measurement)
 errors = zeros(n_trial, nf, n_measurement)
 
-normalized_error(err) = sqrt(sum(err.*err.*[0.5;0.5;1/(max_mass - min_mass)]))
 
 @load "greedy_v_random/data" errors thetas estimates
 if false

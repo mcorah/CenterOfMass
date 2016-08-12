@@ -21,3 +21,5 @@ attachment_ps = map(theta->r_attach*[cos(theta);sin(theta);0], thetas)
 resolution = 0.1
 
 interior_q(x) = norm(x) <= 1 - resolution * 3/2
+
+normalized_error(err) = sqrt(sum(err.*err.*[0.5;0.5;1/(max_mass - min_mass)]))
