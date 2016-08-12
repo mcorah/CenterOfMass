@@ -16,7 +16,7 @@ function normal(x, var)
   normal(x, -0.5*ov, sqrt2pivar)
 end
 
-normal(x, nhalfov, ov2sqrt2pi) = exp(x*x*nhalfov) * ov2sqrt2pi
+normal(x::Float64, nhalfov::Float64, ov2sqrt2pi::Float64) = exp(x*x*nhalfov) * ov2sqrt2pi
 
 function critical_force(wrench_applied, wrench_offset, W_boundary)
   fa = Variable(1)
