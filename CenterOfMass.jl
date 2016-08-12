@@ -270,4 +270,120 @@ end
 
 include("csqmi.jl")
 
+typealias CombinationMap Dict{Array{Int64,1},Array{Float64,2}}
+function generate_over_combinations(action_ws, num_choose, prior,
+  boundary_ws, actuator_limit = 1e6, interior_q = x->true)
+
+  total_limit = actuator_limit * num_choose
+
+  d = CombinationMap()
+  for c = combinations(1:length(action_ws), num_choose)
+    action_w = mean(action_ws[c])
+    field = get_critical_values(boundary_ws, action_w, prior, interior_q, total_limit)
+    normals = normal_matrix(field[:], sigma^2)
+    d[c] = normals
+  end
+  d
+end
+
+function generate_combinations_maps(action_ws, max_choose, prior,
+  boundary_ws, actuator_limit = 1e6, interior_q = x->true)
+  out = Array{CombinationMap,1}()
+  for ii = 1:max_choose
+    println("Generating normals for $(ii)")
+    @time combination_map = generate_over_combinations(action_ws, ii, prior,
+      boundary_ws, actuator_limit, interior_q)
+    push!(out, combination_map)
+  end
+  out
+end
+
+function maximize_csqmi_combinations(robot_indices, num_select, prior,
+  boundary_ws, action_ws, sigma, interior_q, actuator_limit)
+
+  max_csqmi = 0.0
+  best_combination = Array{Float64,1}()
+  data = get_data(prior)[:]
+
+  total_limit = actuator_limit * num_select
+
+  for c = combinations(robot_indices, num_select)
+    action_w = mean(attachment_ws[c])
+
+    field = get_critical_values(boundary_ws, action_w, prior, interior_q, total_limit)
+    normals = normal_matrix(field[:], sigma^2)
+
+    csqmi = compute_mutual_information(data, normals)
+
+    if csqmi > max_csqmi
+      max_csqmi = csqmi
+      best_combination = c
+    end
+  end
+
+  max_csqmi, best_combination
+end
+
+function maximize_csqmi_available_robots(robot_indices, prior, boundary_ws,
+  action_ws, sigma, interior_q, actuator_limit)
+
+  max_csqmi = 0.0
+  best_combination = Array{Float64,1}()
+
+  for ii = 1:length(robot_indices)
+    csqmi, c = maximize_csqmi_combinations(robot_indices, ii, prior,
+      boundary_ws, action_ws, sigma, interior_q, actuator_limit)
+
+    if csqmi > max_csqmi
+      max_csqmi = csqmi
+      best_combination = c
+    end
+  end
+
+  max_csqmi, best_combination
+end
+
+function maximize_csqmi_additional_robot(robot_indices, prior, boundary_ws,
+  action_ws, sigma, interior_q, actuator_limit)
+
+  max_csqmi = 0.0
+  best_combination = Array{Float64,1}()
+  additional_robot = 0
+
+  all_robots = collect(1:length(action_ws))
+
+  remaining_robots = setdiff(all_robots, robot_indices)
+
+  # iterate over all combinations of robots including the additional robot
+  for remaining_robot = remaining_robots
+    for ii = 0:length(robot_indices)
+      for c = combinations(robot_indices, ii)
+        robots = [remaining_robot; c]
+        total_limit = actuator_limit * length(robots)
+
+        action_w = mean(action_ws[robots])
+
+        field = get_critical_values(circle_ws, action_w, prior, interior_q, total_limit)
+        normals = normal_matrix(field[:], sigma^2)
+
+        csqmi = compute_mutual_information(data, normals)
+
+        if csqmi > max_csqmi
+          max_csqmi = csqmi
+          best_combination = robots
+          additional_robot = remaining_robot
+        end
+      end
+    end
+  end
+
+  max_csqmi, best_combination, additional_robot
+end
+
+# feasibility
+
+# optimality
+
+# expected configuration value
+
 #end
