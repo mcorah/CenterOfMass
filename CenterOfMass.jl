@@ -3,6 +3,7 @@
 using PyPlot
 using Convex
 using SCS
+using GLPKMathProgInterface
 include("Histogram.jl")
 
 # all wrenches computed around the origin
@@ -390,7 +391,7 @@ function maximize_csqmi_additional_robot(robot_indices, prior, boundary_ws,
         field = get_critical_values(circle_ws, action_w, prior, interior_q, total_limit)
         normals = normal_matrix(field[:], sigma^2)
 
-        csqmi = compute_mutual_information(data, normals)
+        csqmi = compute_mutual_information(get_data(prior)[:], normals)
 
         if csqmi > max_csqmi
           max_csqmi = csqmi
@@ -404,7 +405,169 @@ function maximize_csqmi_additional_robot(robot_indices, prior, boundary_ws,
   max_csqmi, best_combination, additional_robot
 end
 
+function maximize_csqmi_additional_robot_feasibility(robot_indices, prior, boundary_ws,
+  action_ws, sigma, interior_q, actuator_limit, feasibility_constraint)
+
+  max_csqmi = 0.0
+  best_combination = Array{Float64,1}()
+  additional_robot = 0
+
+  all_robots = collect(1:length(action_ws))
+
+  remaining_robots = setdiff(all_robots, robot_indices)
+
+  # iterate over all combinations of robots including the additional robot
+  for remaining_robot = remaining_robots
+    robot_indices_p = [robot_indices; remaining_robot]
+    robots = action_ws[robot_indices_p]
+    doubly_remaining = setdiff(all_robots, robot_indices_p)
+
+    fp = feasibility_probability(belief, robots, doubly_remaining, actuator_limit, max_robots)
+
+    if fp >= feasibility_constraint
+      println("adding robot $(remaining_robot) is feasible")
+      for ii = 0:length(robot_indices)
+        for c = combinations(robot_indices, ii)
+          robots = [remaining_robot; c]
+          total_limit = actuator_limit * length(robots)
+
+          action_w = mean(action_ws[robots])
+
+          field = get_critical_values(circle_ws, action_w, prior, interior_q, total_limit)
+          normals = normal_matrix(field[:], sigma^2)
+
+          csqmi = compute_mutual_information(get_data(prior)[:], normals)
+
+          if csqmi > max_csqmi
+            max_csqmi = csqmi
+            best_combination = robots
+            additional_robot = remaining_robot
+          end
+        end
+      end
+    else
+      println("adding robot $(remaining_robot) isn't feasible")
+    end
+  end
+
+  max_csqmi, best_combination, additional_robot
+end
+
 # feasibility
+function lifting_feasibility(applied_wrenches, wrench_offset, actuator_limit)
+  @show W = hcat(applied_wrenches...)
+
+  @show fs = Variable(length(applied_wrenches))
+
+  lifting_condition = W*fs + wrench_offset == 0
+
+  feasibility = [fs >= 0.0; fs <= actuator_limit]
+
+  problem = maximize(0, [lifting_condition; feasibility])
+
+  solver = SCSSolver(verbose = 0)
+  solve!(problem, solver)
+
+  ret = problem.status != :Infeasible
+
+  ret
+end
+
+function check_feasible_configuration(chosen_ws, remaining_ws, offset_w, actuator_limit,
+  max_num_robots)
+
+  num_remaining = max_num_robots - length(chosen_ws)
+
+  W_chosen = hcat(chosen_ws...)
+  W_remaining = hcat(remaining_ws...)
+
+  fs_chosen = Variable(length(chosen_ws))
+  fs_remaining = Variable(length(remaining_ws))
+
+  fs_enabled = Variable(length(remaining_ws), :Bin)
+
+  feasibility = Convex.Constraint[]
+  if length(remaining_ws) > 0 && length(chosen_ws) > 0
+    #println("remaining and chosen")
+    feasibility = [
+      W_chosen*fs_chosen + W_remaining*fs_remaining + offset_w == 0
+      fs_chosen >= 0.0;
+      fs_remaining >= 0.0;
+      fs_chosen <= actuator_limit;
+      fs_remaining <= fs_enabled*actuator_limit;
+      sum(fs_enabled) <= num_remaining
+    ]
+  elseif length(remaining_ws) > 0
+    #println("remaining")
+    feasibility = [
+      W_remaining*fs_remaining + offset_w == 0
+      fs_remaining >= 0.0;
+      fs_remaining <= fs_enabled*actuator_limit;
+      sum(fs_enabled) <= num_remaining
+    ]
+  else
+    #println("chosen")
+    feasibility = [
+      W_chosen*fs_chosen + offset_w == 0
+      fs_chosen >= 0.0;
+      fs_chosen <= actuator_limit;
+    ]
+  end
+
+  problem = minimize(0, feasibility)
+
+  solver = GLPKSolverMIP(presolve=true, msg_lev=GLPK.MSG_OFF)
+
+  solve!(problem, solver)
+
+  ret = problem.status == :Optimal
+
+  ret
+end
+
+function milp()
+  x = Variable(4, :Bin)
+
+  problem = minimize(sum(x), x>=0.5)
+
+  solver = GLPKSolverMIP(presolve=true)
+  solve!(problem, solver)
+
+  ret = problem.optval
+
+  if problem.status == :Infeasible
+    ret = 1000
+  end
+
+  ret
+end
+
+# probability of feasible configuration
+function feasibility_probability(belief, chosen_ws, remaining_ws,
+  actuator_limit, max_num_robots)
+  g = -9.8
+  ranges = get_range(belief)
+
+  data = get_data(belief)
+
+  total = 0.0
+
+  for ii = 1:length(ranges[1])
+    for jj = 1:length(ranges[2])
+      for kk = 1:length(ranges[3])
+        p = from_indices(belief, [ii;jj;kk])
+        gravity_w = g * p[3] * point_to_wrench(p[1:2])
+
+        feasible = check_feasible_configuration(chosen_ws, remaining_ws,
+          gravity_w, actuator_limit, max_num_robots)
+
+        total += feasible * data[ii,jj,kk]
+      end
+    end
+  end
+
+  total
+end
 
 # optimality
 
