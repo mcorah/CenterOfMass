@@ -1,7 +1,7 @@
-plt[:close]("all")
-
 include("CenterOfMass.jl")
 include("setup_parameters.jl")
+
+plt[:close]("all")
 
 actuator_limit = 3.0
 max_robots = 4
