@@ -25,4 +25,4 @@ resolution = 0.1
 # note resolution
 interior_q(x) = norm(x) <= 1 - 0.1 * 3/2
 
-normalized_error(err) = sqrt(sum(err.*err.*[0.5;0.5;1/(max_mass - min_mass)]))
+normalized_error(err) = sqrt(sum((err.*[0.5;0.5;1/(max_mass - min_mass)]).^2))
