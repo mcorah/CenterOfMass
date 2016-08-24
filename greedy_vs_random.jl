@@ -86,10 +86,20 @@ else
 @load "greedy_v_random/data" errors thetas estimates
 end
 
+colors = ["b" "g"]
+
 mean_error = mean(errors, 1)
-plot(1:n_measurement, mean_error[:,1,:][:])
-plot(1:n_measurement, mean_error[:,2,:][:])
+plot(1:n_measurement, mean_error[:,1,:][:], color = "b", linewidth = 3.0)
+plot(1:n_measurement, mean_error[:,2,:][:], color = "g", linewidth = 3.0)
 legend(["csqmi", "random"])
+
+for ii = 1:size(errors, 2)
+  for jj = 1:size(errors, 1)
+    plot(1:n_measurement, errors[jj, ii,:][:], color = colors[ii], alpha = 0.1,
+    linewidth = 1.0)
+  end
+end
+
 xlabel("Iteration")
 ylabel("Normalized error")
 
