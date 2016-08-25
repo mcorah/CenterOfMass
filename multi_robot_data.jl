@@ -5,7 +5,7 @@ include("setup_parameters.jl")
 
 plt[:close]("all")
 
-actuator_limit = 100.0
+actuator_limit = 4.0
 max_robots = 4
 csqmi_ratios = [1.0; 2.0; 5.0; 10.0]
 #csqmi_ratios = [1.0; 10.0]
@@ -79,7 +79,8 @@ for (ii, csqmi_ratio) = enumerate(csqmi_ratios)
       println("\nRobots measurement: $(robots_measurement)")
       println("Measurement: $(applied_f)/$(f_hat), total limit: $(total_actuator_limit)\n")
 
-      critical_forces = get_critical_values(circle_ws, applied_w, belief, interior_q)
+      critical_forces = get_critical_values(circle_ws, applied_w, belief,
+        interior_q, total_actuator_limit)
 
       update_prior!(belief, critical_forces, f_hat, sigma)
 
