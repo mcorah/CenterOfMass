@@ -133,7 +133,7 @@ if save_plots && do_belief
         plot_occupied_points(attachment_ps[robots])
         cloud = to_cloud(belief, interior_q)
         scaled_ps = (15*cloud[4,:]'/maximum(cloud[4,:]))
-        scatter3D(cloud[1,:]', cloud[2,:]', cloud[3,:]', "z", scaled_ps.^(1/3), "purple", alpha = 0.5)
+        scatter3D(cloud[1,:]', cloud[2,:]', cloud[3,:]', "z", scaled_ps.^2, "purple", alpha = 0.5)
 
         scatter3D([com_p[1]], [com_p[2]], [mass], "z", 200, "red", marker="*", alpha=1)
 
