@@ -420,7 +420,7 @@ function maximize_csqmi_additional_robot_feasibility(robot_indices, prior, bound
   for remaining_robot = remaining_robots
     robot_indices_p = [robot_indices; remaining_robot]
     robots = action_ws[robot_indices_p]
-    doubly_remaining = setdiff(all_robots, robot_indices_p)
+    doubly_remaining = action_ws[setdiff(all_robots, robot_indices_p)]
 
     fp = feasibility_probability(belief, robots, doubly_remaining, actuator_limit, max_robots)
 
