@@ -86,7 +86,8 @@ for ii = 1:n_measurement
   println("\nRobots measurement: $(robots_measurement)")
   println("Measurement: $(applied_f)/$(f_hat), total limit: $(total_actuator_limit)\n")
 
-  critical_forces = get_critical_values(circle_ws, applied_w, belief, interior_q)
+  critical_forces = get_critical_values(circle_ws, applied_w, belief,
+    interior_q, total_actuator_limit)
 
   update_prior!(belief, critical_forces, f_hat, sigma)
 
