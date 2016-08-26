@@ -333,7 +333,7 @@ function maximize_csqmi_combinations(robot_indices, num_select, prior,
   total_limit = actuator_limit * num_select
 
   for c = combinations(robot_indices, num_select)
-    action_w = mean(attachment_ws[c])
+    action_w = mean(action_ws[c])
 
     field = get_critical_values(boundary_ws, action_w, prior, interior_q, total_limit)
     normals = normal_matrix(field[:], sigma^2)
@@ -490,7 +490,7 @@ function check_feasible_configuration(chosen_ws, remaining_ws, offset_w, actuato
   if length(remaining_ws) > 0 && length(chosen_ws) > 0
     #println("remaining and chosen")
     feasibility = [
-      W_chosen*fs_chosen + W_remaining*fs_remaining + offset_w == 0
+      W_chosen*fs_chosen + W_remaining*fs_remaining + offset_w == 0.0;
       fs_chosen >= 0.0;
       fs_remaining >= 0.0;
       fs_chosen <= actuator_limit;
@@ -500,7 +500,7 @@ function check_feasible_configuration(chosen_ws, remaining_ws, offset_w, actuato
   elseif length(remaining_ws) > 0
     #println("remaining")
     feasibility = [
-      W_remaining*fs_remaining + offset_w == 0
+      W_remaining*fs_remaining + offset_w == 0.0;
       fs_remaining >= 0.0;
       fs_remaining <= fs_enabled*actuator_limit;
       sum(fs_enabled) <= num_remaining
@@ -508,13 +508,13 @@ function check_feasible_configuration(chosen_ws, remaining_ws, offset_w, actuato
   else
     #println("chosen")
     feasibility = [
-      W_chosen*fs_chosen + offset_w == 0
+      W_chosen*fs_chosen + offset_w == 0.0;
       fs_chosen >= 0.0;
       fs_chosen <= actuator_limit;
     ]
   end
 
-  problem = minimize(0, feasibility)
+  problem = minimize(0.0, feasibility)
 
   solver = GLPKSolverMIP(presolve=true, msg_lev=GLPK.MSG_OFF)
 
