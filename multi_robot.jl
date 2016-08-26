@@ -26,7 +26,7 @@ for ii = 1:n_measurement
   plot_attachment_points(attachment_ps)
   plot_occupied_points(attachment_ps[robots])
 
-  cloud = to_cloud(belief, masses, interior_q)
+  cloud = to_cloud(belief, interior_q)
   scaled_ps = (15*cloud[4,:]'/maximum(cloud[4,:]))
   scatter3D(cloud[1,:]', cloud[2,:]', cloud[3,:]', "z", scaled_ps.^2, "purple", alpha = 0.5)
 

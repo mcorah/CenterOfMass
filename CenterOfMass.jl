@@ -263,7 +263,7 @@ function plot_attachment_csqmis(boundary_ps, attachment_ps, csqmis)
     color="b", alpha = 0.5, edgecolor="k", linewidth=2)
 end
 
-function to_cloud(prior, masses, interior_q)
+function to_cloud(prior, interior_q)
   out = Any[]
   ind = 1
   for kk = 1:length(get_range(prior, 3))

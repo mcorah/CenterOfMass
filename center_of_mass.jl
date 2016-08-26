@@ -44,7 +44,7 @@ for ii = 1:16
   f_hat = applied_f + sigma * randn()
   update_prior!(prior, critical_forces, f_hat, sigma)
 
-  cloud = to_cloud(prior, masses, interior_q)
+  cloud = to_cloud(prior, interior_q)
 
   fig, ax = plt[:subplots](1)
 
