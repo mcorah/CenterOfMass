@@ -425,7 +425,7 @@ function maximize_csqmi_additional_robot_feasibility(robot_indices, prior, bound
     fp = feasibility_probability(belief, robots, doubly_remaining, actuator_limit, max_robots)
 
     if fp >= feasibility_constraint
-      println("adding robot $(remaining_robot) is feasible")
+      println("adding robot $(remaining_robot) is feasible: $(fp) >= $(feasibility_constraint)")
       for ii = 0:length(robot_indices)
         for c = combinations(robot_indices, ii)
           robots = [remaining_robot; c]
@@ -446,7 +446,7 @@ function maximize_csqmi_additional_robot_feasibility(robot_indices, prior, bound
         end
       end
     else
-      println("adding robot $(remaining_robot) isn't feasible")
+      println("adding robot $(remaining_robot) isn't feasible: $(fp) < $(feasibility_constraint)")
     end
   end
 
