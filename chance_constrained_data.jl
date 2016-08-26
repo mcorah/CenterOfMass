@@ -74,7 +74,7 @@ for ii = 1:n_trial
   no_attach_count = 1
 
   for jj = 1:n_measurement
-    println("\n$ii,$ii: Measurement: $(jj), robots: $(robots)\n")
+    println("\n$ii: Measurement: $(jj), robots: $(robots)\n")
 
     current_feasibility = feasibility_probability(belief, Array[], attachment_ws, actuator_limit, max_robots)
     println("Current feasibility: $(current_feasibility)")
