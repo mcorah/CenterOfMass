@@ -1,6 +1,6 @@
 min_mass = 0.6
 max_mass = 1.4
-g = -9.8
+const g = -9.8
 #z = [0;0;1]
 sigma = 1.0
 
