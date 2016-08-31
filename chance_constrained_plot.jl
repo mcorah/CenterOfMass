@@ -35,6 +35,10 @@ num_robot = map(x->length(x.robots), data_array)
 actuator_limits = actuator_limit * num_measurement
 limits = forces - actuator_limits .>-1e-6
 
+feasible_configuration = num_robot .== 4 .* true_feasibility
+feasible_configurations = sum(feasible_configuration[:,end])
+println("Found $(feasible_configurations) feasible configurations in $(size(data_array,1)) trials")
+
 current_feasibility = map(x->x.current_feasibility, data_array)
 true_feasibility = map(x->x.true_feasibility, data_array)
 
@@ -110,7 +114,7 @@ println("feasibility")
 
 figure()
 
-mean_feasibility = mean(current_feasbility, 1)
+mean_feasibility = mean(current_feasibility, 1)
 plot(indices, mean_feasibility[:], color = "k", linewidth = 2.0)
 
 for ii = 1:size(current_feasibility, 1)
