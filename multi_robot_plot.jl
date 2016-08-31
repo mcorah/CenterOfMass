@@ -42,7 +42,7 @@ errors = map(x->x.error, data_array)
 mean_errors = mean(errors, 2)
 @show size(mean_errors)
 
-colors = ["b", "g", "r", "c", "m"]
+colors = ["b", "g", "r", "m"]
 
 indices = collect(1:size(mean_errors,3))
 for ii = 1:size(mean_errors, 1)
