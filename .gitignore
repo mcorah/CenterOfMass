@@ -2,4 +2,9 @@
 *.swp
 *.swo
 *.swn
-fig
+*.mem
+multi_robot/*
+chance_constrained/*
+fig/*
+backup/*
+greedy_vs_random/*
