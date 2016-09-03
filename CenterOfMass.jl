@@ -5,14 +5,15 @@ using Convex
 using SCS
 using GLPKMathProgInterface
 include("Histogram.jl")
+include("plotting_tools.jl")
 
 # all wrenches computed around the origin
 point_to_wrench(p::Array{Float64,1}) = [1.0;-p[2]; p[1]]
 
 # normal(x, var) = exp(-0.5*x*x/var)/sqrt(2*pi*var)
-one_over_sqrt_2pi = 1 / sqrt(2*pi)
-function normal(x, var)
-  ov = 1/var
+const one_over_sqrt_2pi = 1.0 / sqrt(2*pi)
+function normal(x, var::Float64)
+  ov = 1.0/var
   sqrt2pivar = sqrt(ov) * one_over_sqrt_2pi
   normal(x, -0.5*ov, sqrt2pivar)
 end
@@ -127,40 +128,31 @@ function get_reaction_points(boundary_ps, boundary_fs)
   force_points
 end
 
-#function solve_and_plot(boundary_ps, com_p, applied_p, attachment_ps)
-  #applied_f, boundary_fs = critical_force_from_points(boundary_ps, com_p, applied_p)
-#
-  #reaction_ps = get_reaction_points(boundary_ps, boundary_fs)
-  #plot_solution(boundary_ps, com_p, applied_p, reaction_ps, attachment_ps)
-#
-  #applied_f, boundary_fs
-#end
-
 function plot_solution(applied_p)
   scatter3D(applied_p[1,:]', applied_p[2,:]', [0], color="k", s=800, alpha=0.8)
 end
 
 function plot_attachment_points(attachment_ps)
   for p = attachment_ps
-    scatter3D(p[1,:]', p[2,:]', [0], s=400, facecolors="none",edgecolors = "k",
-    alpha = 0.8)
+    #scatter3D(p[1,:]', p[2,:]', [0], s=400, facecolors="",edgecolors = "k",
+    #alpha = 0.8)
+    plot_circle(p, radius = 0.2)
   end
 end
 
 function plot_new_point(point)
-  scatter3D(point[1,:]', point[2,:]', [0], s=400, facecolors="none",edgecolors =
-  "b", alpha = 0.8)
+  # nothing to see here
 end
 
 function plot_occupied_points(occupied_points)
   for p = occupied_points
-    scatter3D(p[1,:]', p[2,:]', [0], color="k", s=400, alpha = 0.8)
+    plot_quadrotor(p+[0;0;0.025], color="k", scale=0.15)
   end
 end
 
 function plot_measurement_points(measurement_points)
   for p = measurement_points
-    scatter3D(p[1,:]', p[2,:]', [0], color="r", s=400, alpha = 0.8)
+    plot_quadrotor(p+[0;0;0.025], color="r", scale=0.15)
   end
 end
 
@@ -214,19 +206,18 @@ function update_prior!(prior, critical_fs, f_hat, sigma)
   p_prior = get_data(prior)
 
   p_f_given_com = map(y->normal(y, sigma^2), f_hat - critical_fs)
-  #plot_field(shift_dims(p_f_given_com), "p_f_given_com")
 
   p_f_and_com = p_f_given_com .* p_prior
-
-  #plot_field(p_f_and_com[1], "p_f_and_com")
 
   p_f = sum(p_f_and_com)
 
   p_com_given_f = p_f_and_com / p_f
 
-  #plot_field(p_com_given_f[1], "p_com_given_f")
+
 
   get_data(prior)[:] = p_com_given_f[:]
+
+  assert(abs(sum(get_data(prior)) - 1.0) < 1e-6)
 
   prior
 end
@@ -518,7 +509,26 @@ function check_feasible_configuration(chosen_ws, remaining_ws, offset_w, actuato
 
   solver = GLPKSolverMIP(presolve=true, msg_lev=GLPK.MSG_OFF)
 
-  solve!(problem, solver)
+  #TT=STDERR
+  #out_read, out_write = redirect_stderr()
+  #close(out_write)
+
+  try
+    solve!(problem, solver)
+  catch ex
+    #data = readavailable(out_read)
+    #close(out_read)
+
+    #redirect_stderr(TT)
+
+    if isa(ex, InterruptException)
+      println("Caught Interrupt")
+    else
+      println("Caught other exception")
+      @show ex
+    end
+    throw(ex)
+  end
 
   ret = problem.status == :Optimal
 
