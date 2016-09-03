@@ -35,12 +35,12 @@ num_robot = map(x->length(x.robots), data_array)
 actuator_limits = actuator_limit * num_measurement
 limits = forces - actuator_limits .>-1e-6
 
+current_feasibility = map(x->x.current_feasibility, data_array)
+true_feasibility = map(x->x.true_feasibility, data_array)
+
 feasible_configuration = num_robot .== 4 .* true_feasibility
 feasible_configurations = sum(feasible_configuration[:,end])
 println("Found $(feasible_configurations) feasible configurations in $(size(data_array,1)) trials")
-
-current_feasibility = map(x->x.current_feasibility, data_array)
-true_feasibility = map(x->x.true_feasibility, data_array)
 
 #######################
 # plot normalized error
@@ -117,9 +117,15 @@ figure()
 mean_feasibility = mean(current_feasibility, 1)
 plot(indices, mean_feasibility[:], color = "k", linewidth = 2.0)
 
+vs = var(current_feasibility, 1)[:]
+fill([indices;reverse(indices)], [mean_feasibility[:]+vs;reverse(mean_feasibility[:]-vs)],
+  color = "k", alpha=0.2, linewidth=0.0)
+
+if false
 for ii = 1:size(current_feasibility, 1)
   plot(indices, current_feasibility[ii,:][:], color = "k", alpha = 0.2,
     linewidth = 1.0)
+end
 end
 
 xlabel("Iteration")
@@ -140,7 +146,8 @@ if save_plots && do_belief
     trial_folder = "$(folder)/$(ii)"
     mkpath(trial_folder)
 
-    for jj = 1:size(errors,2) plt[:close]("all")
+    for jj = 1:size(errors,2)
+      plt[:close]("all")
       println("belief: trial=$(ii), iter=$(jj)")
       data = data_array[ii,jj]
       robots = data.robots
@@ -152,7 +159,7 @@ if save_plots && do_belief
 
       figure()
       plot_attachment_points(attachment_ps)
-      plot_occupied_points(attachment_ps[robots])
+      plot_occupied_points(attachment_ps[setdiff(robots, robots_measurement)])
       cloud = to_cloud(belief, interior_q)
       scaled_ps = (15*cloud[4,:]'/maximum(cloud[4,:]))
       scatter3D(cloud[1,:]', cloud[2,:]', cloud[3,:]', "z", scaled_ps.^2, "purple", alpha = 0.5)
@@ -178,6 +185,7 @@ if save_plots && do_belief
           plot_new_point(attachment_ps[setdiff(robots, old_robots)[1]])
         end
       end
+      fill3d(hcat(circle_ps...), alpha=0.2)
 
       xlabel("X")
       ylabel("Y")
@@ -185,6 +193,9 @@ if save_plots && do_belief
       #fig[:axes][1][:get_yaxis]()[:set_visible](false)
       #fig[:axes][1][:get_xaxis]()[:set_visible](false)
       #axis("off")
+      xlim(-1.0,1.0)
+      ylim(-1.0,1.0)
+      zlim(0.0,1.405)
       savefig("$(trial_folder)/belief_$(jj).png", pad_inches=0.01, bbox_inches="tight")
     end
   end

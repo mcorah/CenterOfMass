@@ -160,6 +160,8 @@ for ii = 1:n_trial
   end
 end
 
-mkdir(folder)
+if ~isdir(folder)
+  mkdir(folder)
+end
 @save "$(folder)/data" data_array csqmi_ratio thetas actuator_limit feasibility_constraint
 Void
