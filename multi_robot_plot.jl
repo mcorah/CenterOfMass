@@ -40,9 +40,8 @@ println("normalized error")
 figure()
 errors = map(x->x.error, data_array)
 mean_errors = mean(errors, 2)
-@show size(mean_errors)
 
-colors = ["b", "g", "r", "m"]
+colors = ["b", "g", "r", "c"]
 
 indices = collect(1:size(mean_errors,3))
 for ii = 1:size(mean_errors, 1)
@@ -51,6 +50,22 @@ for ii = 1:size(mean_errors, 1)
 end
 legend(map(string, csqmi_ratios))
 
+cutoff = 0.15
+for ii = 1:size(errors, 1)
+  n = 2
+  vs = var(errors[ii,:,:], 2)[:]
+  es = mean_errors[ii,1,:][:]
+  #errorbar(1:n:size(errors,3), mean_errors[ii,1,:][1:n:end], yerr = [vs;vs], color =
+    #colors[ii])
+  fill([indices;reverse(indices)], [es+vs;reverse(es-vs)], color = colors[ii],
+    alpha=0.2, linewidth=0.0)
+end
+plot([0;25],[cutoff;cutoff],linestyle="--", color="k")
+plot([9;9],[0.0;cutoff],linestyle="--", color="k")
+plot([13;13],[0.0;cutoff],linestyle="--", color="k")
+plot([17;17],[0.0;cutoff],linestyle="--", color="k")
+
+if false
 for jj = 1:size(errors, 1)
   for ii = 1:size(errors, 2)
     plot(1:size(errors,3), errors[jj, ii,:][:], color = colors[jj], alpha = 0.2,
@@ -67,8 +82,9 @@ for jj = 1:size(errors, 1)
     #end
   end
 end
+end
 
-ylim(0.0, 0.8)
+#ylim(0.0, 0.8)
 xlim(0.0, size(errors, 3))
 
 
@@ -130,7 +146,7 @@ if save_plots && do_belief
 
         figure()
         plot_attachment_points(attachment_ps)
-        plot_occupied_points(attachment_ps[robots])
+        plot_occupied_points(attachment_ps[setdiff(robots, robots_measurement)])
         cloud = to_cloud(belief, interior_q)
         scaled_ps = (15*cloud[4,:]'/maximum(cloud[4,:]))
         scatter3D(cloud[1,:]', cloud[2,:]', cloud[3,:]', "z", scaled_ps.^2, "purple", alpha = 0.5)
@@ -145,6 +161,7 @@ if save_plots && do_belief
             plot_new_point(attachment_ps[setdiff(robots, old_robots)[1]])
           end
         end
+        fill3d(hcat(circle_ps...), alpha=0.2)
 
 
         xlabel("X")
@@ -153,6 +170,9 @@ if save_plots && do_belief
         #fig[:axes][1][:get_yaxis]()[:set_visible](false)
         #fig[:axes][1][:get_xaxis]()[:set_visible](false)
         #axis("off")
+        xlim(-1.0,1.0)
+        ylim(-1.0,1.0)
+        zlim(0.0,1.405)
         savefig("$(trial_folder)/belief_$(kk).png", pad_inches=0.01, bbox_inches="tight")
       end
     end
