@@ -93,17 +93,47 @@ plot(1:n_measurement, mean_error[:,1,:][:], color = "b", linewidth = 3.0)
 plot(1:n_measurement, mean_error[:,2,:][:], color = "g", linewidth = 3.0)
 legend(["csqmi", "random"])
 
+e1 = errors[:,1,[1:2:end]][:,:]
+e2 = errors[:,2,[2:2:end]][:,:]
+stuff = zeros(size(errors,1),size(errors,3))
+stuff[:,1:2:end] = e1
+stuff[:,2:2:end] = e2
+data = Dict()
+data[:showfliers] = false
+data[:notch] = false
+#boxplot(stuff, whis=0.2)
+
+#vs = var(errors, 1)
+#n = 2
+#v1 = vs[:,1,:][:,1:n:end]
+#v2 = vs[:,2,:][:,1:n:end]
+#errorbar(1:n:n_measurement, mean_error[:,1,1:n:end][:], yerr = v1[:], color = "b")
+#errorbar(1:n:n_measurement, mean_error[:,2,1:n:end][:], yerr = v2[:], color = "g")
+
+indices = collect(1:n_measurement)
+for ii = 1:size(errors,2)
+  vs = var(errors[:,ii,:],1)[:]
+  es = mean_error[:,ii,:][:]
+  fill([indices;reverse(indices)], [es+vs;reverse(es-vs)], color = colors[ii],
+    alpha=0.2, linewidth=0.0)
+end
+
+if false
 for ii = 1:size(errors, 2)
   for jj = 1:size(errors, 1)
     plot(1:n_measurement, errors[jj, ii,:][:], color = colors[ii], alpha = 0.1,
     linewidth = 1.0)
   end
 end
+end
+plot([0;20],[0.1;0.1],linestyle="--", color="k")
+plot([7;7],[0.0;0.1],linestyle="--", color="b")
+plot([13;13],[0.0;0.1],linestyle="--", color="g")
 
 xlabel("Iteration")
 ylabel("Normalized error")
 
-#@save "greedy_v_random/data" errors thetas estimates
+#@save "greedy_vs_random/data" errors thetas estimates
 
-matplotlib2tikz.save("greedy_v_random/convergence.tex", figureheight="\\figureheight",
+matplotlib2tikz.save("greedy_vs_random/convergence.tex", figureheight="\\figureheight",
   figurewidth="\\figurewidth")
