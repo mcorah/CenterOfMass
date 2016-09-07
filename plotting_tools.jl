@@ -1,6 +1,4 @@
 using PyPlot
-#using PyCall
-#@pyimport mpl_toolkits.mplot3d as a3
 
 function circle(p; radius=1, scale=1, dth=0.1)
   scale*hcat(map(x->p+[radius*cos(x);radius*sin(x)], 0:dth:(2*pi)+dth)...)
@@ -23,7 +21,7 @@ function fill3d(ps; color = "k", alpha=1.0)
   ax[:add_collection3d](poly)
 end
 
-function plot_quadrotor(p; scale=1, color="k", linewidth=2.0, theta=0.0)
+function plot_quadrotor(p; scale=1, color="k", linewidth=2.0, theta=0.0, alpha=1.0)
   r = 0.6
   rot = so2(theta)
   circle_ps = rot*scale*[[1;0] [0;1] [-1;0] [0;-1]]
@@ -37,13 +35,16 @@ function plot_quadrotor(p; scale=1, color="k", linewidth=2.0, theta=0.0)
 
   l1 = [p2+scale*rot[:,1] p2-scale*rot[:,1]]
   l2 = [p2+scale*rot[:,2] p2-scale*rot[:,2]]
-  plot3D(l1[1,:][:], l1[2,:][:], p3*ones(2), color=color, linewidth=linewidth)
-  plot3D(l2[1,:][:], l2[2,:][:], p3*ones(2), color=color, linewidth=linewidth)
+  plot3D(l1[1,:][:], l1[2,:][:], p3*ones(2), color=color, linewidth=linewidth,
+          alpha=alpha)
+  plot3D(l2[1,:][:], l2[2,:][:], p3*ones(2), color=color, linewidth=linewidth,
+          alpha = alpha)
 
   for ii = 1:size(circle_ps,2)
     c = circle(p2+circle_ps[:,ii], radius=scale*r)
-    plot3D(c[1,:][:], c[2,:][:], p3*ones(size(c,2)), color=color, linestyle="--", linewidth=linewidth)
+    plot3D(c[1,:][:], c[2,:][:], p3*ones(size(c,2)), color=color,
+            linestyle="--", linewidth=linewidth, alpha=alpha)
     #fill(c[1,:][:], c[2,:][:], p3*ones(size(c,2)), color=color, alpha=0.5)
-    fill3d([c;p3*ones(1,size(c,2))], color=color, alpha=0.5)
+    fill3d([c;p3*ones(1,size(c,2))], color=color, alpha=alpha*0.5)
   end
 end
