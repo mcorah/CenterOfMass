@@ -446,9 +446,9 @@ end
 
 # feasibility
 function lifting_feasibility(applied_wrenches, wrench_offset, actuator_limit)
-  @show W = hcat(applied_wrenches...)
+  W = hcat(applied_wrenches...)
 
-  @show fs = Variable(length(applied_wrenches))
+  fs = Variable(length(applied_wrenches))
 
   lifting_condition = W*fs + wrench_offset == 0
 
@@ -459,7 +459,7 @@ function lifting_feasibility(applied_wrenches, wrench_offset, actuator_limit)
   solver = SCSSolver(verbose = 0)
   solve!(problem, solver)
 
-  ret = problem.status != :Infeasible
+  ret = problem.status == :Optimal
 
   ret
 end
@@ -507,7 +507,8 @@ function check_feasible_configuration(chosen_ws, remaining_ws, offset_w, actuato
 
   problem = minimize(0.0, feasibility)
 
-  solver = GLPKSolverMIP(presolve=true, msg_lev=GLPK.MSG_OFF)
+  # solver was giving incorrect results with presolve set to false
+  solver = GLPKSolverMIP(presolve=false, msg_lev=GLPK.MSG_OFF)
 
   #TT=STDERR
   #out_read, out_write = redirect_stderr()
