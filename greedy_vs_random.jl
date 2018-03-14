@@ -17,12 +17,16 @@ plt[:close]("all")
 
 prior = initialize_prior(circle_ps, resolution, interior_q, masses)
 
+if false
 @time critical_forces_by_point = map(attachment_ws) do wrench
   get_critical_values(circle_ws, wrench, prior, interior_q)
 end
+end
 
+if false
 @time normals_matrices = map(critical_forces_by_point) do forces
   normal_matrix(forces[:], sigma^2)
+end
 end
 
 rand_com() = r_attach * rand_in_circle()[1:2] # hack
@@ -83,7 +87,16 @@ for ii = 1:n_trial
   end
 end
 else
-@load "greedy_v_random/data" errors thetas estimates
+@load "greedy_vs_random/data.old.good" errors thetas estimates
+for ii = 1:n_trial
+  theta = thetas[:,ii]
+  for jj = 1:nf
+    for kk = 1:n_measurement
+      estimate = estimates[ii,jj,kk]
+      errors[ii,jj,kk] = normalized_error(estimate - theta)
+    end
+  end
+end
 end
 
 colors = ["b" "g"]
@@ -93,28 +106,11 @@ plot(1:n_measurement, mean_error[:,1,:][:], color = "b", linewidth = 3.0)
 plot(1:n_measurement, mean_error[:,2,:][:], color = "g", linewidth = 3.0)
 legend(["csqmi", "random"])
 
-e1 = errors[:,1,[1:2:end]][:,:]
-e2 = errors[:,2,[2:2:end]][:,:]
-stuff = zeros(size(errors,1),size(errors,3))
-stuff[:,1:2:end] = e1
-stuff[:,2:2:end] = e2
-data = Dict()
-data[:showfliers] = false
-data[:notch] = false
-#boxplot(stuff, whis=0.2)
-
-#vs = var(errors, 1)
-#n = 2
-#v1 = vs[:,1,:][:,1:n:end]
-#v2 = vs[:,2,:][:,1:n:end]
-#errorbar(1:n:n_measurement, mean_error[:,1,1:n:end][:], yerr = v1[:], color = "b")
-#errorbar(1:n:n_measurement, mean_error[:,2,1:n:end][:], yerr = v2[:], color = "g")
-
 indices = collect(1:n_measurement)
 for ii = 1:size(errors,2)
-  vs = var(errors[:,ii,:],1)[:]
+  stds = std(errors[:,ii,:],1)[:]/sqrt(size(errors,1))
   es = mean_error[:,ii,:][:]
-  fill([indices;reverse(indices)], [es+vs;reverse(es-vs)], color = colors[ii],
+  fill([indices;reverse(indices)], [es+stds;reverse(es-stds)], color = colors[ii],
     alpha=0.2, linewidth=0.0)
 end
 

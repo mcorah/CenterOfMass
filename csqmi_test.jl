@@ -3,12 +3,15 @@ using Convex
 using ProfileView
 include("CenterOfMass.jl")
 
+sigma = 1.0
+forces = rand(2205)
+normals = normal_matrix(forces, sigma^2)
+
 function test_csqmi()
-  sigma = 1
-  forces = rand(2000)
-  prior = rand(2000)
+  prior = rand(2205)
   prior = prior / sum(prior)
-  @elapsed @profile compute_mutual_information(forces, prior, sigma)
+  #@elapsed @profile compute_mutual_information(forces, prior, sigma)
+  @elapsed @profile compute_mutual_information(prior, normals)
 end
 
 Profile.clear()

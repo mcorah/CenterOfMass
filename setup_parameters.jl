@@ -5,6 +5,7 @@ const g = -9.8
 sigma = 1.0
 
 mass_resolution = 0.2
+#mass_resolution = 0.05
 masses = collect(min_mass:mass_resolution:max_mass)
 
 np = 20

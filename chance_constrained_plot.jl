@@ -2,8 +2,8 @@ using HDF5, JLD
 using PyCall
 @pyimport matplotlib2tikz
 
-max_immediate_feasibility = 0.476
-mean_immediate_feasibility = 0.322
+# max_immediate_feasibility = 0.476
+# mean_immediate_feasibility = 0.322
 
 include("CenterOfMass.jl")
 include("setup_parameters.jl")
@@ -59,15 +59,17 @@ end
 
 lifting_configurations = sum(current_lifting[:,end])
 
-println("Found $(lifting_configurations) feasible lifting configurations in $(size(data_array,1)) trials")
-println("$(sum(~true_feasibility[:,end])) trials had no feasible lifting configuration remaining")
-
 ##########################################################################
 # compare to behavior of best immediate combination to iterative selection
 ##########################################################################
 
 best_initial = map(x->robots_feasible([1,3,5,8], thetas[:,x]), 1:size(thetas,2))
-println("The rate for the best initial configuration is $(mean(best_initial))")
+mean_best = mean(best_initial)
+
+# print output
+println("Found $(lifting_configurations) ($(mean(current_lifting[:,end]))) feasible lifting configurations in $(size(data_array,1)) trials")
+println("$(sum(~true_feasibility[:,end])) trials had no feasible lifting configuration remaining")
+println("The rate for the best initial configuration is $(mean_best)")
 
 #######################
 # plot normalized error
@@ -105,7 +107,7 @@ end
 end
 
 ylim(0.0, 0.5)
-xlim(0.0, size(errors, 2))
+xlim(1.0, size(errors, 2))
 
 xlabel("Iteration")
 ylabel("Normalized error")
@@ -149,10 +151,12 @@ figure()
 mean_feasibility = mean(current_feasibility, 1)
 #plot(indices, mean_feasibility[:], color = "k", linewidth = 2.0)
 plot(indices, mean(true_feasibility,1)[:], color = "b")
+standard_error(true_feasibility, "b")
 plot(indices, mean(current_lifting,1)[:], color = "g")
+standard_error(current_lifting,"g")
 
-plot([1;size(errors, 2)], max_immediate_feasibility*ones(2), "--r")
-plot([1;size(errors, 2)], mean_immediate_feasibility*ones(2), "--c")
+plot([1;size(errors, 2)], mean_best*ones(2), "--r")
+standard_error(repmat(best_initial,1,size(errors,2)),"r")
 
 #stds = std(current_feasibility, 1)[:] / sqrt(size(current_feasibility,1))
 #fill([indices;reverse(indices)], [mean_feasibility[:]+stds;reverse(mean_feasibility[:]-stds)],
@@ -165,7 +169,7 @@ for ii = 1:size(current_feasibility, 1)
 end
 end
 
-legend(["feasibility existence", "current feasibility", "max configuration", "mean feasibility"], loc="upper left")
+legend(["feasibility existence", "current feasibility", "max configuration"], loc="upper left")
 
 
 xlabel("Iteration")
@@ -180,32 +184,33 @@ end
 # feasibility by number of robots
 #################################
 
-feasibility_by_number = zeros(max_robots)
-lifting_by_number = zeros(max_robots)
-num_number = zeros(max_robots)
-for ii = 1:max_robots
-  for jj = 1:n_trial
-    ind = findfirst(num_robot[1,:], ii)
+feasibility_by_number = zeros(n_trial,max_robots)
+lifting_by_number = zeros(n_trial,max_robots)
+for ii = 1:n_trial
+  for jj = 1:max_robots
+    ind = findfirst(num_robot[ii,:], jj)
     if ind > 0
-      num_number[ii] += 1
-      feasibility_by_number[ii] += true_feasibility[jj,ind]
-      lifting_by_number[ii] += current_lifting[jj,ind]
+      feasibility_by_number[ii,jj] = true_feasibility[ii,ind]
+      lifting_by_number[ii,jj] = current_lifting[ii,ind]
     else
-      feasibility_by_number[ii] += true_feasibility[jj,ind]
-      lifting_by_number[ii] += current_lifting[jj,ind]
+      # Treat the data pessimistically if not reaching a given number.
+      # If not already in a lifting configuration, assume it becomes infeasible,
+      # and if not already in a lifting configuration, assume such is not
+      # reached
+      feasibility_by_number[ii,jj] = lifting_by_number[ii,jj-1]
+      lifting_by_number[ii,jj] = lifting_by_number[ii,jj-1]
     end
   end
 end
 
-feasibility_by_number[:] ./= num_number
-lifting_by_number[:] ./= num_number
-
 figure()
-plot(collect(1:max_robots), feasibility_by_number, color = "b")
-plot(collect(1:max_robots), lifting_by_number, color = "g")
-plot([1;max_robots], max_immediate_feasibility*ones(2), "--r")
-plot([1;max_robots], mean_immediate_feasibility*ones(2), "--c")
-legend(["feasibility existence", "current feasibility", "max configuration", "mean feasibility"], loc="upper left")
+plot(collect(1:max_robots), mean(feasibility_by_number,1)[:], color = "b")
+standard_error(feasibility_by_number,"b")
+plot(collect(1:max_robots), mean(lifting_by_number,1)[:], color = "g")
+standard_error(lifting_by_number,"g")
+plot([1;max_robots], mean_best*ones(2), "--r")
+standard_error(repmat(best_initial,1,max_robots),"r")
+legend(["feasibility existence", "current feasibility", "max configuration"], loc="upper left")
 
 xlabel("Num. robots")
 #ylabel("Feasibility probability")

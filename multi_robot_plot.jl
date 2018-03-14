@@ -5,8 +5,8 @@ using PyCall
 include("CenterOfMass.jl")
 include("setup_parameters.jl")
 
-save_plots = true
-do_belief = true
+save_plots = false
+do_belief = false
 
 plt[:close]("all")
 pygui(!save_plots)
@@ -24,13 +24,14 @@ type TrialData
   robots
 end
 
-@load "$(folder)/data" data_array csqmi_ratios thetas actuator_limit
+@load "$(folder)/data.25_iter.0_4" data_array csqmi_ratios thetas actuator_limit
 
 forces = map(x->x.applied_f, data_array)
 num_measurement = map(x->length(x.robots_measurement), data_array)
 num_robot = map(x->length(x.robots), data_array)
 actuator_limits = actuator_limit * num_measurement
 limits = forces - actuator_limits .>-1e-6
+partial_limits = forces - actuator_limit .>-1e-6
 
 #######################
 # plot normalized error
@@ -53,17 +54,15 @@ legend(map(string, csqmi_ratios))
 cutoff = 0.15
 for ii = 1:size(errors, 1)
   n = 2
-  vs = var(errors[ii,:,:], 2)[:]
+  stds = std(errors[ii,:,:], 2)[:]/sqrt(size(errors,2))
   es = mean_errors[ii,1,:][:]
-  #errorbar(1:n:size(errors,3), mean_errors[ii,1,:][1:n:end], yerr = [vs;vs], color =
-    #colors[ii])
-  fill([indices;reverse(indices)], [es+vs;reverse(es-vs)], color = colors[ii],
+  fill([indices;reverse(indices)], [es+stds;reverse(es-stds)], color = colors[ii],
     alpha=0.2, linewidth=0.0)
 end
-plot([0;25],[cutoff;cutoff],linestyle="--", color="k")
-plot([9;9],[0.0;cutoff],linestyle="--", color="k")
-plot([13;13],[0.0;cutoff],linestyle="--", color="k")
-plot([17;17],[0.0;cutoff],linestyle="--", color="k")
+#plot([0;25],[cutoff;cutoff],linestyle="--", color="k")
+#plot([9;9],[0.0;cutoff],linestyle="--", color="k")
+#plot([13;13],[0.0;cutoff],linestyle="--", color="k")
+#plot([17;17],[0.0;cutoff],linestyle="--", color="k")
 
 if false
 for jj = 1:size(errors, 1)

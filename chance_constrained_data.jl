@@ -12,7 +12,7 @@ folder = "chance_constrained"
 actuator_limit = 6.0
 max_robots = 4
 csqmi_ratio = 5.0
-n_trial = 20
+n_trial = 40
 n_measurement = 20
 
 prior = initialize_prior(circle_ps, resolution, interior_q, masses)
@@ -78,7 +78,8 @@ for ii = 1:n_trial
 
     println("\n$ii: Measurement: $(jj), robots: $(robots)\n")
 
-    current_feasibility = feasibility_probability(belief, Array[], attachment_ws, actuator_limit, max_robots)
+    remaining_robots = setdiff(collect(1:length(attachment_ps)), robots)
+    current_feasibility = feasibility_probability(belief, attachment_ws[robots], attachment_ws[remaining_robots], actuator_limit, max_robots)
     println("Current feasibility: $(current_feasibility)")
 
     @time @show csqmi_current, robots_current = maximize_csqmi_available_robots(

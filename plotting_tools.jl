@@ -48,3 +48,13 @@ function plot_quadrotor(p; scale=1, color="k", linewidth=2.0, theta=0.0, alpha=1
     fill3d([c;p3*ones(1,size(c,2))], color=color, alpha=alpha*0.5)
   end
 end
+
+# iterations in 2, trials in 1
+function standard_error(data, color = "k")
+  stds = std(data, 1)[:] / sqrt(size(data,1))
+  means = mean(data,1)[:]
+
+  indices = collect(1:size(data,2))
+  fill([indices;reverse(indices)], [means+stds;reverse(means-stds)],
+    color = color, alpha=0.2, linewidth=0.0)
+end

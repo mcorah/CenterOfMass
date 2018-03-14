@@ -19,7 +19,7 @@ normals_matrices = map(critical_forces_by_point) do forces
   normal_matrix(forces[:], sigma^2)
 end
 
-pygui(false)
+pygui(true)
 for ii = 1:16
   # selection of second point
   n_attach = length(critical_forces_by_point)
@@ -65,6 +65,6 @@ for ii = 1:16
   fig[:axes][1][:get_yaxis]()[:set_visible](false)
   fig[:axes][1][:get_xaxis]()[:set_visible](false)
   #axis("off")
-  savefig("fig/belief_3d$(ii).png", pad_inches=0.01, bbox_inches="tight")
+  #savefig("fig/belief_3d$(ii).png", pad_inches=0.01, bbox_inches="tight")
 end
 pygui(true)
