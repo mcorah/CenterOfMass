@@ -4,8 +4,8 @@ using PyCall
 using HDF5, JLD
 @pyimport matplotlib2tikz
 
-save_plots = false
-do_belief = false
+save_plots = true
+do_belief = true
 
 plt[:close]("all")
 pygui(!save_plots)
@@ -31,26 +31,35 @@ forces = map(x->x.applied_f, data_array)
 errors = map(x->x.error, data_array)
 n_measurement = size(data_array, 3)
 
-colors = ["b" "g"]
+colors = ["b" "g" "m"]
 
 mean_error = mean(errors, 1)
-plot(1:n_measurement, mean_error[:,1,:][:], color = colors[1], linewidth = 3.0)
-plot(1:n_measurement, mean_error[:,2,:][:], color = colors[2], linewidth = 3.0)
-legend(["csqmi", "random"])
+for ii = 1:size(mean_error, 2)
+  plot(1:n_measurement, mean_error[:,ii,:][:], color = colors[ii], linewidth = 3.0)
+end
+legend(["greedy", "random", "cyclic"])
 
-e1 = errors[:,1,[1:2:end]][:,:]
-e2 = errors[:,2,[2:2:end]][:,:]
-stuff = zeros(size(errors,1),size(errors,3))
-stuff[:,1:2:end] = e1
-stuff[:,2:2:end] = e2
-boxplot(stuff)
+indices = collect(1:n_measurement)
+for ii = 1:size(errors,2)
+  stds = std(errors[:,ii,:],1)[:]/sqrt(size(errors,1))
+  es = mean_error[:,ii,:][:]
+  fill([indices;reverse(indices)], [es+stds;reverse(es-stds)], color = colors[ii],
+    alpha=0.2, linewidth=0.0)
+end
 
+if false
 for ii = 1:size(errors, 2)
   for jj = 1:size(errors, 1)
     plot(1:n_measurement, errors[jj, ii,:][:], color = colors[ii], alpha = 0.1,
       linewidth = 1.0)
   end
 end
+end
+
+plot([0;20],[0.1;0.1],linestyle="--", color="k")
+plot([7;7],[0.0;0.1],linestyle="--", color="b")
+plot([15;15],[0.0;0.1],linestyle="--", color="g")
+plot([11;11],[0.0;0.1],linestyle="--", color="m")
 
 xlabel("Iteration")
 ylabel("Normalized error")
@@ -84,6 +93,7 @@ if save_plots && do_belief
         cloud = to_cloud(belief, interior_q)
 
         plot_attachment_csqmis(circle_ps, attachment_ps, csqmis)
+        fill3d(hcat(circle_ps...), alpha=0.2, color="k")
 
         plot_solution(applied_p)
 

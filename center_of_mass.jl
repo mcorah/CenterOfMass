@@ -19,7 +19,7 @@ normals_matrices = map(critical_forces_by_point) do forces
   normal_matrix(forces[:], sigma^2)
 end
 
-pygui(true)
+pygui(false)
 for ii = 1:16
   # selection of second point
   n_attach = length(critical_forces_by_point)
@@ -58,13 +58,19 @@ for ii = 1:16
   scatter3D([com_p[1]], [com_p[2]], [mass], "z", 200, "red", marker="*", alpha=1)
   #scatter3D(cloud[1,:]', cloud[2,:]', cloud[3,:]', cloud[4,:]')
 
+  circle_polygon = hcat(circle_ps..., circle_ps[1])
+  plot3D(circle_polygon[1,:][:], circle_polygon[2,:][:], circle_polygon[3,:][:],
+    color = "k", alpha = 1, linestyle = "solid")
+
   #title("probability distribution of center-of-mass")
   xlabel("X")
   ylabel("Y")
   zlabel("M")
   fig[:axes][1][:get_yaxis]()[:set_visible](false)
   fig[:axes][1][:get_xaxis]()[:set_visible](false)
+  xlim(-1.0,1.0)
+  ylim(-1.0,1.0)
   #axis("off")
-  #savefig("fig/belief_3d$(ii).png", pad_inches=0.01, bbox_inches="tight")
+  savefig("fig/belief_3d$(ii).png", pad_inches=0.01, bbox_inches="tight")
 end
 pygui(true)

@@ -7,7 +7,7 @@ folder = "greedy_vs_random"
 include("CenterOfMass.jl")
 include("setup_parameters.jl")
 
-n_trial = 10
+n_trial = 1000
 n_measurement = 20
 
 prior = initialize_prior(circle_ps, resolution, interior_q, masses)
@@ -29,6 +29,14 @@ thetas = hcat(map(x->rand_parameters(), 1:n_trial)...)
 
 select_random(prior) = (rand(1:length(attachment_ps)), ones(length(attachment_ps)))
 
+cycle_val = 1
+select_cyclic(prior) = begin
+  global cycle_val
+  val = cycle_val
+  cycle_val = (cycle_val-1+3)%length(attachment_ps) + 1
+  (val, ones(length(attachment_ps)))
+end
+
 function select_csqmi(prior)
   n = length(critical_forces_by_point)
   csqmis = map(1:n) do ii
@@ -38,11 +46,11 @@ function select_csqmi(prior)
   indmax(csqmis), csqmis
 end
 
-selection_functions = [select_csqmi, select_random]
+selection_functions = [select_csqmi, select_random, select_cyclic]
 nf = length(selection_functions)
 
 type TrialData
-  belief::Histogram
+  #belief::Histogram
   estimate
   error
   applied_f
@@ -82,7 +90,7 @@ for ii = 1:n_trial
       estimate = weighted_average(belief)
       error = normalized_error(estimate - theta)
 
-      data = TrialData(deepcopy(belief), deepcopy(estimate), error, applied_f,
+      data = TrialData(deepcopy(estimate), error, applied_f,
         f_hat, csqmis, index)
       data_array[ii,jj,kk] = data
     end
@@ -92,5 +100,5 @@ end
 if ~isdir(folder)
   mkdir(folder)
 end
-@save "$(folder)/data" data_array thetas
+@save "$(folder)/data_new" data_array thetas
 Void
