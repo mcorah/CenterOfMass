@@ -1,11 +1,13 @@
-#module
+module Histograms
 
-#export Histogram, reset_distribution, ndim, get_data, get_range, generate_prior,
-       #test_histogram, weighted_average, size
+using LinearAlgebra
+
+export Histogram, reset_distribution, ndim, get_data, get_range, generate_prior,
+       test_histogram, weighted_average, size
 
 import Base.size
 
-type Histogram
+struct Histogram
   range
   data::Array
   Histogram(range, data) = new(map(collect, range), data)
@@ -38,11 +40,10 @@ generate_prior(x::Histogram) = generate_prior(x.range)
 weighted_average(x::Histogram, dim) = dot(sum_all_dims_but(x.data, dim), collect(x.range[dim]))
 weighted_average(h::Histogram) = map(x->weighted_average(h, x), 1:length(h.range))
 
-#from_indices(h::Histogram, inds) = convert(Array{Float64},
-  #map(x->h.range[x[1]][x[2]], zip(1:ndim(h), inds)))
-function from_indices(h::Histogram, inds::Array{Int64})
+# Returns probability from the indices in the ranges
+function from_indices(h::Histogram, inds)
   n = length(h.range)
-  out = zeros(n)
+  out = Array{Float64}(undef, n)
   for ii = 1:n
     out[ii] = h.range[ii][inds[ii]]
   end
@@ -64,9 +65,9 @@ function test_histogram()
   assert(test_positive(h))
 end
 
-function sum_all_dims_but{N,T}(data::Array{N,T}, dim)
-  all_but = filter(x->x!=dim, 1:T)
+function sum_all_dims_but(data::Array{T,N}, dim) where {T, N}
+  all_but = filter(x->x!=dim, 1:N)
   sum(data, all_but)[:]
 end
 
-#end
+end
