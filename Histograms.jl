@@ -29,6 +29,12 @@ function reset_distribution!(x::Histogram)
   Void
 end
 
+# Copy constructor. Note that this only duplicates the data.
+# We assume that nobody is crazy enough to modify the range.
+function Histogram(x::Histogram)
+  Histogram(get_range(x), Array(get_data(x)))
+end
+
 ndim(x::Histogram) = length(x.range)
 
 size(x::Histogram) = size(x.data)
