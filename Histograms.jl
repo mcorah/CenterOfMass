@@ -7,11 +7,20 @@ export Histogram, reset_distribution, ndim, get_data, get_range, generate_prior,
 
 import Base.size
 
-struct Histogram
-  range
-  data::Array
-  Histogram(range, data) = new(map(collect, range), data)
+struct Histogram{RangeType <: Real}
+  range::Tuple{Vector{RangeType},Vector{RangeType}}
+  data::Array{Float64, 2}
+
+  # The default constructor specializes for when we can infer the type of the
+  # range from the signature. (Alternatively, see the outer constructor).
+  function Histogram(range::Tuple{Vector{D}, Vector{D}}, data) where D <: Real
+    new{D}(range, data)
+  end
 end
+
+# Outer constructor that defers determination of the histogram type until after
+# pulling the ranges
+Histogram(range, data) = Histogram(map(collect, range), data)
 
 Histogram(range) = Histogram(range, generate_prior(range))
 
