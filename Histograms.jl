@@ -2,19 +2,22 @@ module Histograms
 
 using LinearAlgebra
 
-export Histogram, reset_distribution, ndim, get_data, get_range, generate_prior,
-       test_histogram, weighted_average, size
+export Histogram, reset_distribution, ndim, get_data, get_buffer, swap_buffer!,
+       copy_filter!, get_range, generate_prior, test_histogram,
+       weighted_average, size
 
 import Base.size
 
-struct Histogram{RangeType <: Real}
+mutable struct Histogram{RangeType <: Real}
   range::Tuple{Vector{RangeType},Vector{RangeType}}
   data::Array{Float64, 2}
+
+  buffer::Array{Float64, 2}
 
   # The default constructor specializes for when we can infer the type of the
   # range from the signature. (Alternatively, see the outer constructor).
   function Histogram(range::Tuple{Vector{D}, Vector{D}}, data) where D <: Real
-    new{D}(range, data)
+    new{D}(range, data, Array{Float64}(undef, size(data)))
   end
 end
 
@@ -40,6 +43,19 @@ ndim(x::Histogram) = length(x.range)
 size(x::Histogram) = size(x.data)
 
 get_data(x::Histogram) = x.data
+get_buffer(x::Histogram) = x.buffer
+
+function swap_buffer!(x::Histogram)
+  old_data = x.data
+
+  x.data = x.buffer
+  x.buffer = old_data
+end
+
+function copy_filter!(x::Histogram; out::Histogram)
+  out.data .= x.data
+  out.buffer .= x.buffer
+end
 
 get_range(x::Histogram) = x.range
 get_range(x::Histogram, index) = x.range[index]
