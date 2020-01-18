@@ -2,9 +2,9 @@ module Histograms
 
 using LinearAlgebra
 
-export Histogram, reset_distribution, ndim, get_data, get_buffer, swap_buffer!,
-       copy_filter!, get_range, generate_prior, test_histogram,
-       weighted_average, size
+export Histogram, duplicate, reset_distribution, ndim, get_data, get_values,
+  get_buffer, swap_buffer!, copy_filter!, get_range, generate_prior,
+  test_histogram, weighted_average, size
 
 import Base.size
 
@@ -21,6 +21,10 @@ mutable struct Histogram{RangeType <: Real}
   end
 end
 
+include("sparse_histograms.jl")
+
+AnyHistogram = Union{SparseHistogram, Histogram}
+
 # Outer constructor that defers determination of the histogram type until after
 # pulling the ranges
 Histogram(range, data) = Histogram(map(collect, range), data)
@@ -34,31 +38,36 @@ end
 
 # Copy constructor. Note that this only duplicates the data.
 # We assume that nobody is crazy enough to modify the range.
+duplicate(x::Histogram) = Histogram(x)
 function Histogram(x::Histogram)
   Histogram(get_range(x), Array(get_data(x)))
 end
 
-ndim(x::Histogram) = length(x.range)
+ndim(x::AnyHistogram) = length(x.range)
 
-size(x::Histogram) = size(x.data)
+size(x::AnyHistogram) = size(x.data)
 
-get_data(x::Histogram) = x.data
-get_buffer(x::Histogram) = x.buffer
+# Returns the data matrix
+get_data(x::AnyHistogram) = x.data
+# Returns the data values themselves (as in for sparse matrices)
+get_values(x::Histogram) = x.data
+get_buffer(x::AnyHistogram) = x.buffer
 
-function swap_buffer!(x::Histogram)
+function swap_buffer!(x::AnyHistogram)
   old_data = x.data
 
   x.data = x.buffer
   x.buffer = old_data
 end
 
-function copy_filter!(x::Histogram; out::Histogram)
+# Copies filter data (exclusively)
+function copy_filter!(x::AnyHistogram; out::AnyHistogram)
   out.data .= x.data
   out.buffer .= x.buffer
 end
 
-get_range(x::Histogram) = x.range
-get_range(x::Histogram, index) = x.range[index]
+get_range(x::AnyHistogram) = x.range
+get_range(x::AnyHistogram, index) = x.range[index]
 
 function generate_prior(range)
   lengths = map(length, range)
@@ -71,7 +80,7 @@ generate_prior(x::Histogram) = generate_prior(x.range)
 weighted_average(x::Histogram, dim) = dot(sum_all_dims_but(x.data, dim), collect(x.range[dim]))
 weighted_average(h::Histogram) = map(x->weighted_average(h, x), 1:length(h.range))
 
-# Returns probability from the indices in the ranges
+# Maps indices in the ranges to the space they represent
 function from_indices(h::Histogram, inds)
   n = length(h.range)
   out = Array{Float64}(undef, n)
