@@ -62,7 +62,8 @@ function drop_below_threshold!(x::SparseHistogram;
                                threshold = x.threshold,
                                trim = false
                               )
-  droptol!(x.data, theshold, trim = trim)
+  droptol!(x.data, threshold, trim = trim)
 end
+drop_below_threshold!(x::Histogram; kwargs...) = nothing
 
 sparsity(x::SparseHistogram) =  1.0 - nnz(get_data(x)) / length(get_data(x))
