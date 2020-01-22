@@ -66,10 +66,50 @@ set_threshold!(x::SparseHistogram; threshold) = (x.threshold = threshold)
 size(x::SparseHistogram) = map(length, x.range)
 get_data(x::SparseHistogram) = reshape(x.data, size(x))
 
-# Copies filter data (exclusively)
+#
+# Sparse helper methods
+#
+
+function clear!(x::SparseVector)
+  resize!(x.nzind, 0)
+  resize!(x.nzval, 0)
+end
+
+function copy_sparse!(out, in, threshold)
+  nzind = in.nzind
+  nzval = in.nzval
+  n = length(nzind)
+
+  out_ind = out.nzind
+  out_val = out.nzval
+
+  # Presume that we will copy most of the input
+  resize!(out_ind, n)
+  resize!(out_val, n)
+
+  # Copy values above the threshold
+  end_ind = 1
+  @inbounds for ii in 1:n
+    if nzval[ii] > threshold
+      out_ind[end_ind] = nzind[ii]
+      out_val[end_ind] = nzval[ii]
+
+      end_ind += 1
+    end
+  end
+
+  resize!(out_ind, end_ind-1)
+  resize!(out_val, end_ind-1)
+
+  nothing
+end
+
+# Copies filter data, keeping nonzeros
 function copy_filter!(x::SparseHistogram; out::SparseHistogram)
-  out.data = to_sparse(x.data, threshold=x.threshold)
-  out.buffer = to_sparse(x.buffer, threshold=x.threshold)
+  copy_sparse!(out.data, x.data, x.threshold)
+  clear!(out.buffer)
+
+  out.threshold = x.threshold
 end
 
 # Remove values from the histogram below a given threshold

@@ -59,9 +59,8 @@ function swap_buffer!(x::AnyHistogram)
 end
 
 # Copies filter data (exclusively)
-function copy_filter!(x::T; out::T) where T <: AnyHistogram
+function copy_filter!(x::Histogram; out::Histogram)
   out.data .= x.data
-  out.buffer .= x.buffer
 end
 
 get_range(x::AnyHistogram) = x.range
