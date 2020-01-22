@@ -23,8 +23,6 @@ end
 
 include("sparse_histograms.jl")
 
-AnyHistogram = Union{SparseHistogram, Histogram}
-
 # Outer constructor that defers determination of the histogram type until after
 # pulling the ranges
 Histogram(range, data) = Histogram(map(collect, range), data)
@@ -45,12 +43,12 @@ end
 
 ndim(x::AnyHistogram) = length(x.range)
 
-size(x::AnyHistogram) = size(x.data)
+size(x::Histogram) = size(x.data)
 
 # Returns the data matrix
-get_data(x::AnyHistogram) = x.data
+get_data(x::Histogram) = x.data
 # Returns the data values themselves (as in for sparse matrices)
-get_values(x::Histogram) = x.data
+get_values(x::AnyHistogram) = x.data
 get_buffer(x::AnyHistogram) = x.buffer
 
 function swap_buffer!(x::AnyHistogram)
@@ -61,7 +59,7 @@ function swap_buffer!(x::AnyHistogram)
 end
 
 # Copies filter data (exclusively)
-function copy_filter!(x::AnyHistogram; out::AnyHistogram)
+function copy_filter!(x::T; out::T) where T <: AnyHistogram
   out.data .= x.data
   out.buffer .= x.buffer
 end
