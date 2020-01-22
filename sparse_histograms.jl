@@ -66,13 +66,19 @@ set_threshold!(x::SparseHistogram; threshold) = (x.threshold = threshold)
 size(x::SparseHistogram) = map(length, x.range)
 get_data(x::SparseHistogram) = reshape(x.data, size(x))
 
+# Copies filter data (exclusively)
+function copy_filter!(x::SparseHistogram; out::SparseHistogram)
+  out.data = to_sparse(x.data, threshold=x.threshold)
+  out.buffer = to_sparse(x.buffer, threshold=x.threshold)
+end
+
 # Remove values from the histogram below a given threshold
 #
 # Trim resizes the matrix. We will generally continue to operate in place so we
 # will end up using the empty space
 function drop_below_threshold!(x::SparseHistogram;
                                threshold = x.threshold,
-                               trim = false
+                               trim = true
                               )
   droptol!(x.data, threshold, trim = trim)
   droptol!(x.buffer, threshold, trim = trim)
